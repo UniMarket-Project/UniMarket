@@ -1,0 +1,62 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# Cancel redundant in-progress workflow runs on new PR commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Build & Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x, 23.x]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Installing dependencies with npm ci..."
+            npm ci
+          else
+            echo "ℹ️ package-lock.json not yet generated. Skipping npm ci until dependencies are committed."
+          fi
+
+      - name: Lint codebase
+        run: npm run lint --workspaces --if-present
+
+      - name: Typecheck TypeScript
+        run: npm run typecheck --workspaces --if-present
+
+      - name: Run automated tests
+        run: npm run test --workspaces --if-present
+
+      - name: Build Shared Contracts
+        run: npm run build --workspace=packages/shared --if-present
+
+      - name: Verify Backend API Build
+        run: npm run build --workspace=apps/api --if-present
+
+      - name: Verify Frontend Web Build
+        run: npm run build --workspace=apps/web --if-present
