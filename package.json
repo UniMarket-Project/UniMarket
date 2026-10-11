@@ -21,10 +21,14 @@
     "db:studio": "npm run db:studio --workspace=apps/api",
     "db:generate": "npm run db:generate --workspace=apps/api",
     "audit": "npm audit",
-    "audit:fix": "npm audit fix"
+    "audit:fix": "npm audit fix",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
     "typescript": "^5.7.3"
   },
   "repository": {
