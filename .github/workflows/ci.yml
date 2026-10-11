@@ -43,6 +43,9 @@ jobs:
             echo "ℹ️ package-lock.json not yet generated. Skipping npm ci until dependencies are committed."
           fi
 
+      - name: Security audit dependencies
+        run: npm audit --audit-level=high
+
       - name: Lint codebase
         run: npm run lint --workspaces --if-present
 
