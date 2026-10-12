@@ -72,6 +72,39 @@ enum PaymentMethod {
   other
 }
 
+enum ReportType {
+  user
+  listing
+  transaction
+}
+
+enum ReportCategory {
+  fraud
+  harassment
+  counterfeit
+  spam
+  prohibited_item
+  other
+}
+
+enum ReportStatus {
+  submitted
+  under_review
+  resolved
+  dismissed
+}
+
+enum NotificationType {
+  verification_result
+  new_message
+  request_response
+  deal_update
+  rating_received
+  report_resolved
+  account_warning
+  account_suspended
+}
+
 // -------------------------------------------------------------
 // Core User Models
 // -------------------------------------------------------------
@@ -106,6 +139,10 @@ model User {
   sellerTransactions Transaction[]      @relation("SellerTransactions")
   reviewsGiven       RatingReview[]     @relation("ReviewsGiven")
   reviewsReceived    RatingReview[]     @relation("ReviewsReceived")
+  reportsCreated     Report[]           @relation("ReportsCreated")
+  reportsResolved    Report[]           @relation("ReportsResolved")
+  notifications      Notification[]
+  auditLogs          AuditLog[]         @relation("AdminAuditLogs")
 
   @@map("users")
 }
@@ -339,4 +376,76 @@ model RatingReview {
   @@unique([transactionId, reviewerId])
   @@index([revieweeId, rating])
   @@map("ratings_reviews")
+}
+
+// -------------------------------------------------------------
+// Moderation & Governance Models
+// -------------------------------------------------------------
+
+model Report {
+  id           String         @id @default(uuid()) @db.Uuid
+  reporterId   String         @map("reporter_id") @db.Uuid
+  reportType   ReportType     @map("report_type")
+  targetId     String         @map("target_id") @db.Uuid
+  category     ReportCategory
+  description  String         @db.Text
+  status       ReportStatus   @default(submitted)
+  action       String?        @db.VarChar(50)
+  adminNotes   String?        @map("admin_notes") @db.Text
+  resolvedById String?        @map("resolved_by_id") @db.Uuid
+  resolvedAt   DateTime?      @map("resolved_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  reporter   User  @relation("ReportsCreated", fields: [reporterId], references: [id])
+  resolvedBy User? @relation("ReportsResolved", fields: [resolvedById], references: [id])
+
+  @@unique([reporterId, targetId])
+  @@index([reportType, targetId])
+  @@index([status, createdAt])
+  @@map("reports")
+}
+
+// -------------------------------------------------------------
+// Notification Models
+// -------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  message   String           @db.Text
+  data      Json             @default("{}")
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// -------------------------------------------------------------
+// Audit & Compliance Models
+// -------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  targetType String   @map("target_type") @db.VarChar(50)
+  targetId   String?  @map("target_id") @db.Uuid
+  details    Json     @default("{}")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_log")
 }
