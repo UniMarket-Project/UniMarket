@@ -59,6 +59,61 @@ enum RequestStatus {
   closed
 }
 
+enum TransactionStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum PaymentMethod {
+  cash
+  transfer
+  other
+}
+
+enum PaymentStatus {
+  recorded
+  pending
+  processing
+  completed
+  failed
+  refunded
+}
+
+enum ReportType {
+  user
+  listing
+  transaction
+}
+
+enum ReportCategory {
+  fraud
+  harassment
+  counterfeit
+  spam
+  prohibited_item
+  other
+}
+
+enum ReportStatus {
+  submitted
+  under_review
+  resolved
+  dismissed
+}
+
+enum NotificationType {
+  verification_result
+  new_message
+  request_response
+  deal_update
+  rating_received
+  report_resolved
+  account_warning
+  account_suspended
+}
+
 // -------------------------------------------------------------
 // Core User Models
 // -------------------------------------------------------------
@@ -87,6 +142,16 @@ model User {
   refreshTokens      RefreshToken[]
   listings           Listing[]
   requests           Request[]
+  sentMessages       Message[]          @relation("SentMessages")
+  receivedMessages   Message[]          @relation("ReceivedMessages")
+  buyerTransactions  Transaction[]      @relation("BuyerTransactions")
+  sellerTransactions Transaction[]      @relation("SellerTransactions")
+  reviewsGiven       RatingReview[]     @relation("ReviewsGiven")
+  reviewsReceived    RatingReview[]     @relation("ReviewsReceived")
+  reportsCreated     Report[]           @relation("ReportsCreated")
+  reportsResolved    Report[]           @relation("ReportsResolved")
+  notifications      Notification[]
+  auditLogs          AuditLog[]         @relation("AdminAuditLogs")
 
   @@map("users")
 }
@@ -182,6 +247,8 @@ model Listing {
   updatedAt          DateTime           @updatedAt @map("updated_at")
 
   createdBy    User          @relation(fields: [createdById], references: [id])
+  messages     Message[]
+  transactions Transaction[]
 
   @@index([status, transactionType, category, createdAt])
   @@index([createdById])
@@ -209,8 +276,193 @@ model Request {
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
   createdBy    User          @relation(fields: [createdById], references: [id])
+  messages     Message[]
+  transactions Transaction[]
 
   @@index([status, category, createdAt])
   @@index([createdById])
   @@map("requests")
+}
+
+// -------------------------------------------------------------
+// Communication Models
+// -------------------------------------------------------------
+
+model Message {
+  id            String    @id @default(uuid()) @db.Uuid
+  senderId      String    @map("sender_id") @db.Uuid
+  recipientId   String    @map("recipient_id") @db.Uuid
+  content       String    @db.Text
+  listingId     String?   @map("listing_id") @db.Uuid
+  requestId     String?   @map("request_id") @db.Uuid
+  transactionId String?   @map("transaction_id") @db.Uuid
+  isRead        Boolean   @default(false) @map("is_read")
+  readAt        DateTime? @map("read_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  sender      User         @relation("SentMessages", fields: [senderId], references: [id])
+  recipient   User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  listing     Listing?     @relation(fields: [listingId], references: [id])
+  request     Request?     @relation(fields: [requestId], references: [id])
+  transaction Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, isRead])
+  @@check(
+    name: "message_context_check",
+    expression: "num_nonnulls(listing_id, request_id, transaction_id) <= 1"
+  )
+  @@map("messages")
+}
+
+// -------------------------------------------------------------
+// Transaction & Payment Models
+// -------------------------------------------------------------
+
+model Transaction {
+  id                String            @id @default(uuid()) @db.Uuid
+  listingId         String?           @map("listing_id") @db.Uuid
+  requestId         String?           @map("request_id") @db.Uuid
+  buyerId           String            @map("buyer_id") @db.Uuid
+  sellerId          String            @map("seller_id") @db.Uuid
+  title             String            @db.VarChar(255)
+  transactionType   ListingType       @map("transaction_type")
+  status            TransactionStatus @default(pending)
+  amount            Decimal           @db.Decimal(12, 2)
+  currency          String            @default("ETB") @db.VarChar(10)
+  quantity          Int               @default(1)
+  rentalStartDate   DateTime?         @map("rental_start_date")
+  rentalEndDate     DateTime?         @map("rental_end_date")
+  buyerConfirmed    Boolean           @default(false) @map("buyer_confirmed")
+  sellerConfirmed   Boolean           @default(false) @map("seller_confirmed")
+  buyerConfirmedAt  DateTime?         @map("buyer_confirmed_at")
+  sellerConfirmedAt DateTime?         @map("seller_confirmed_at")
+  cancelReason      String?           @map("cancel_reason") @db.Text
+  cancelledById     String?           @map("cancelled_by_id") @db.Uuid
+  metadata          Json              @default("{}")
+  notes             String?           @db.Text
+  completedAt       DateTime?         @map("completed_at")
+  expiresAt         DateTime          @map("expires_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  listing  Listing?       @relation(fields: [listingId], references: [id])
+  request  Request?       @relation(fields: [requestId], references: [id])
+  buyer    User           @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  seller   User           @relation("SellerTransactions", fields: [sellerId], references: [id])
+  payment  Payment?
+  ratings  RatingReview[]
+  messages Message[]
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@check(
+    name: "transaction_context_check",
+    expression: "num_nonnulls(listing_id, request_id) <= 1"
+  )
+  @@map("transactions")
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  transactionId String        @unique @map("transaction_id") @db.Uuid
+  method        PaymentMethod
+  status        PaymentStatus @default(recorded)
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model RatingReview {
+  id            String   @id @default(uuid()) @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  reviewerId    String   @map("reviewer_id") @db.Uuid
+  revieweeId    String   @map("reviewee_id") @db.Uuid
+  rating        Int
+  comment       String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  reviewer    User        @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee    User        @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@unique([transactionId, reviewerId])
+  @@index([revieweeId, rating])
+  @@map("ratings_reviews")
+}
+
+// -------------------------------------------------------------
+// Moderation & Governance Models
+// -------------------------------------------------------------
+
+model Report {
+  id           String         @id @default(uuid()) @db.Uuid
+  reporterId   String         @map("reporter_id") @db.Uuid
+  reportType   ReportType     @map("report_type")
+  targetId     String         @map("target_id") @db.Uuid
+  category     ReportCategory
+  description  String         @db.Text
+  status       ReportStatus   @default(submitted)
+  action       String?        @db.VarChar(50)
+  adminNotes   String?        @map("admin_notes") @db.Text
+  resolvedById String?        @map("resolved_by_id") @db.Uuid
+  resolvedAt   DateTime?      @map("resolved_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  reporter   User  @relation("ReportsCreated", fields: [reporterId], references: [id])
+  resolvedBy User? @relation("ReportsResolved", fields: [resolvedById], references: [id])
+
+  @@unique([reporterId, targetId])
+  @@index([reportType, targetId])
+  @@index([status, createdAt])
+  @@map("reports")
+}
+
+// -------------------------------------------------------------
+// Notification Models
+// -------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  message   String           @db.Text
+  data      Json             @default("{}")
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// -------------------------------------------------------------
+// Audit & Compliance Models
+// -------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  targetType String   @map("target_type") @db.VarChar(50)
+  targetId   String?  @map("target_id") @db.Uuid
+  details    Json     @default("{}")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_log")
 }
