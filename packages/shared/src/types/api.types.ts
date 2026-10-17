@@ -1,21 +1,42 @@
-export interface Pagination {
+export interface ApiMeta {
+  timestamp: string;
+  requestId?: string;
+}
+
+export interface PaginationMeta {
   page: number;
   limit: number;
   total: number;
-  totalPages: number;
+  hasMore: boolean;
 }
 
-export interface ApiSuccess<T> {
+export interface ApiSuccess<T = unknown> {
   success: true;
   data: T;
-  message?: string;
-  pagination?: Pagination;
+  meta: ApiMeta;
+}
+
+export interface ApiFieldError {
+  field: string;
+  code: string;
+  message: string;
+}
+
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+  details?: ApiFieldError[] | Record<string, unknown>;
 }
 
 export interface ApiError {
   success: false;
-  error: string;
-  code: string;
-  details?: unknown;
-  path?: string;
+  error: ApiErrorBody;
+  meta: ApiMeta;
+}
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
+export interface PaginatedData<T> {
+  items: T[];
+  pagination: PaginationMeta;
 }
