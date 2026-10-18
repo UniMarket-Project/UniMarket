@@ -1,2 +1,7 @@
-export const STUDENT_ID_REGEX = /^[A-Z]{2}\d{4}[A-Z]{2}\d{2}$/;
-export const PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
+export const REGEX = {
+  PHONE_ET: /^\+251[79]\d{8}$/,
+  PASSWORD: /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$/,
+  STUDENT_ID: /^[A-Za-z0-9\/\-_]{4,30}$/,
+  NATIONAL_ID: /^[A-Za-z0-9\-_]{6,30}$/,
+  UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+} as const;
