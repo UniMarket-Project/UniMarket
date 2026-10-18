@@ -12,10 +12,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "paths": {
-      "@platform/*": ["src/platform/*"],
-      "@modules/*": ["src/modules/*"],
+      "@platform/*": ["./src/platform/*"],
+      "@modules/*": ["./src/modules/*"],
       "@unimarket/shared": ["../../packages/shared/dist/index.d.ts"]
     }
   },

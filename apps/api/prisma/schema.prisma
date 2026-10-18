@@ -308,10 +308,6 @@ model Message {
 
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, isRead])
-  @@check(
-    name: "message_context_check",
-    expression: "num_nonnulls(listing_id, request_id, transaction_id) <= 1"
-  )
   @@map("messages")
 }
 
@@ -356,10 +352,6 @@ model Transaction {
 
   @@index([buyerId, status])
   @@index([sellerId, status])
-  @@check(
-    name: "transaction_context_check",
-    expression: "num_nonnulls(listing_id, request_id) <= 1"
-  )
   @@map("transactions")
 }
 

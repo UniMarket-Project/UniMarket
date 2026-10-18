@@ -43,6 +43,12 @@ jobs:
             echo "ℹ️ package-lock.json not yet generated. Skipping npm ci until dependencies are committed."
           fi
 
+      - name: Build Shared Contracts
+        run: npm run build --workspace=packages/shared --if-present
+
+      - name: Generate Prisma Client
+        run: npm run db:generate --workspace=apps/api
+
       - name: Security audit dependencies
         run: npm audit --audit-level=high
 
@@ -54,9 +60,6 @@ jobs:
 
       - name: Run automated tests
         run: npm run test --workspaces --if-present
-
-      - name: Build Shared Contracts
-        run: npm run build --workspace=packages/shared --if-present
 
       - name: Verify Backend API Build
         run: npm run build --workspace=apps/api --if-present
