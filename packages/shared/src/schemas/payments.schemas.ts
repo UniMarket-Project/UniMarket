@@ -1,15 +1,13 @@
-import { z } from 'zod';
+import { z } from "zod";
+import { PaymentMethod } from "../enums/transaction.enums.js";
+import { uuidSchema } from "./common.schemas.js";
 
-export const paymentSchema = z.object({
-  id: z.string(),
-  transactionId: z.string(),
-  method: z.enum(['cash', 'transfer', 'other']),
-  status: z.enum(['recorded', 'pending', 'processing', 'completed', 'failed', 'refunded']),
-  notes: z.string().optional(),
-  createdAt: z.string().datetime(),
+export const recordOfflinePaymentSchema = z.object({
+  transactionId: uuidSchema,
+  method: z.nativeEnum(PaymentMethod),
+  notes: z.string().trim().max(500).optional(),
 });
 
-export const paymentCreationSchema = z.object({
-  transactionId: z.string(),
-  method: z.enum(['cash', 'transfer', 'other']),
-});
+export type RecordOfflinePaymentInput = z.infer<
+  typeof recordOfflinePaymentSchema
+>;

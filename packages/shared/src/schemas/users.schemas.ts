@@ -1,27 +1,17 @@
-import { z } from 'zod';
-import { UserType, Role, VerificationStatus } from '../enums';
+import { z } from "zod";
+import { LIMITS } from "../constants/limits.js";
+import { AvailabilityStatus } from "../enums/user.enums.js";
+import { locationSchema, paginationQuerySchema } from "./common.schemas.js";
 
-export const userSummarySchema = z.object({
-  id: z.string(),
-  email: z.string().email(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  userType: z.nativeEnum(UserType),
-  role: z.nativeEnum(Role),
-  isActive: z.boolean().default(true),
+export const updateProfileSchema = z.object({
+  firstName: z.string().trim().min(2).max(100).optional(),
+  lastName: z.string().trim().min(2).max(100).optional(),
+  bio: z.string().trim().max(LIMITS.BIO_MAX_LENGTH).nullable().optional(),
+  avatarUrl: z.string().url().nullable().optional(),
+  availabilityStatus: z.nativeEnum(AvailabilityStatus).optional(),
+  location: locationSchema.nullable().optional(),
 });
 
-export const userProfileSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  bio: z.string().optional(),
-  avatarUrl: z.string().url().optional(),
-  availabilityStatus: z.enum(['available', 'busy', 'unavailable']),
-  averageRating: z.number().min(0).max(5).default(0),
-  totalRatings: z.number().int().default(0),
-  totalTransactions: z.number().int().default(0),
-  totalReviews: z.number().int().default(0),
-  metadata: z.record(z.unknown()).default({}),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
+export const userListingsQuerySchema = paginationQuerySchema;
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
