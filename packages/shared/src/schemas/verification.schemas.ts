@@ -1,29 +1,32 @@
-import { z } from 'zod';
-import { VerificationStatus } from '../enums';
+import { z } from "zod";
+import { REGEX } from "../constants/regex.js";
 
-export const verificationSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  type: z.enum(['student_id', 'business_license', 'passport', 'other']),
-  idNumberEncrypted: z.string(),
-  idNumberHash: z.string().length(64),
-  universityCode: z.string().optional(),
-  businessName: z.string().optional(),
-  businessCategory: z.string().optional(),
+export const submitStudentVerificationSchema = z.object({
+  studentId: z
+    .string()
+    .trim()
+    .min(4)
+    .max(30)
+    .regex(REGEX.STUDENT_ID, { message: "Invalid Student ID format" }),
+  universityCode: z.string().trim().min(2).max(20),
   documentUrl: z.string().url().optional(),
-  status: z.nativeEnum(VerificationStatus),
-  rejectionReason: z.string().optional(),
-  submittedAt: z.string().datetime(),
-  verifiedAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional(),
 });
 
-export const verificationCreationSchema = z.object({
-  userId: z.string(),
-  type: z.enum(['student_id', 'business_license', 'passport', 'other']),
-  idNumberEncrypted: z.string(),
-  idNumberHash: z.string().length(64),
-  universityCode: z.string().optional(),
-  businessName: z.string().optional(),
-  businessCategory: z.string().optional(),
+export const submitProviderVerificationSchema = z.object({
+  nationalId: z
+    .string()
+    .trim()
+    .min(6)
+    .max(30)
+    .regex(REGEX.NATIONAL_ID, { message: "Invalid National ID format" }),
+  businessName: z.string().trim().min(2).max(100),
+  businessCategory: z.string().trim().min(2).max(100),
+  documentUrl: z.string().url().optional(),
 });
+
+export type SubmitStudentVerificationInput = z.infer<
+  typeof submitStudentVerificationSchema
+>;
+export type SubmitProviderVerificationInput = z.infer<
+  typeof submitProviderVerificationSchema
+>;
