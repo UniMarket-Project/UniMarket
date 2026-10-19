@@ -1,23 +1,37 @@
-import { z } from 'zod';
+import { z } from "zod";
+import { LIMITS } from "../constants/limits.js";
+import { paginationQuerySchema, uuidSchema } from "./common.schemas.js";
 
-export const messageSchema = z.object({
-  id: z.string(),
-  senderId: z.string(),
-  recipientId: z.string(),
-  content: z.string().min(1),
-  listingId: z.string().optional(),
-  requestId: z.string().optional(),
-  transactionId: z.string().optional(),
-  isRead: z.boolean().default(false),
-  readAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime(),
+export const sendMessageSchema = z
+  .object({
+    recipientId: uuidSchema,
+    content: z.string().trim().min(1).max(LIMITS.MESSAGE_MAX_LENGTH),
+    listingId: uuidSchema.optional(),
+    requestId: uuidSchema.optional(),
+    transactionId: uuidSchema.optional(),
+  })
+  .refine(
+    (data) => {
+      const contexts = [
+        data.listingId,
+        data.requestId,
+        data.transactionId,
+      ].filter(Boolean);
+      return contexts.length <= 1;
+    },
+    {
+      message:
+        "At most one context ID (listingId, requestId, or transactionId) is allowed",
+      path: ["listingId"],
+    },
+  );
+
+export const conversationThreadQuerySchema = paginationQuerySchema.extend({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  after: z.string().datetime().optional(),
 });
 
-export const messageCreationSchema = z.object({
-  senderId: z.string(),
-  recipientId: z.string(),
-  content: z.string().min(1),
-  listingId: z.string().optional(),
-  requestId: z.string().optional(),
-  transactionId: z.string().optional(),
-});
+export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type ConversationThreadQueryInput = z.infer<
+  typeof conversationThreadQuerySchema
+>;
