@@ -11,3 +11,11 @@ import {
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'verifications' | 'reports'>('verifications');
+   // 1. Fetch Stats
+  const { data: statsData } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
+      const res = await api.get('/admin/stats');
+      return res.data.data;
+    },
+  });
