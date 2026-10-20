@@ -100,4 +100,127 @@ export function MessagesPage() {
 
   const activePartner = activeConv ? (activeConv.user || activeConv.participant) : activePartnerFallback;
   const currentContextTitle = activeConv?.context?.title || contextTitleFallback;
+   return (
+    <div className="h-[calc(100vh-140px)] min-h-[500px] rounded-3xl border border-border bg-card shadow-sm overflow-hidden flex flex-col md:flex-row">
+      {/* Left Sidebar: Conversations List */}
+      <div
+        className={`w-full md:w-80 border-r border-border flex flex-col bg-muted/20 ${
+          activePartnerId ? 'hidden md:flex' : 'flex'
+        }`}
+      >
+        <div className="p-4 border-b border-border">
+          <h2 className="font-extrabold text-base text-foreground">Messages</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Campus deal inquiries and coordination
+          </p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto divide-y divide-border/60">
+          {convsLoading ? (
+            <div className="p-4 text-center text-xs text-muted-foreground">Loading chats...</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-8 text-center text-xs text-muted-foreground space-y-2">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/50 mx-auto" />
+              <p>No conversations yet. Inquire about any listing to start chatting.</p>
+            </div>
+          ) : (
+            conversations.map((c: any) => {
+              const partner = c.user || c.participant || {};
+              const partnerId = partner.userId || partner.id;
+              const isSelected = partnerId === activePartnerId;
+              const lastMsg = c.lastMessage || {};
+
+              return (
+                <button
+                  key={partnerId || Math.random()}
+                  onClick={() => {
+                    setActivePartnerId(partnerId);
+                    setActiveListingId(c.context?.listingId || null);
+                  }}
+                  className={`w-full p-4 flex items-start gap-3 text-left transition-colors ${
+                    isSelected ? 'bg-emerald-500/10 dark:bg-emerald-950/40' : 'hover:bg-muted/60'
+                  }`}
+                >
+                  <Avatar
+                    src={partner.avatarUrl}
+                    name={`${partner.firstName || 'User'} ${partner.lastName || ''}`}
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-xs truncate">
+                        {partner.firstName} {partner.lastName}
+                      </p>
+                      {lastMsg.createdAt && (
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-1">
+                          {new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground truncate mt-1">
+                      {lastMsg.content || 'Started a conversation'}
+                    </p>
+
+                    {c.unreadCount > 0 && (
+                      <span className="inline-block mt-1 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                        {c.unreadCount} new
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Right Column: Chat Thread */}
+      <div className={`flex-1 flex flex-col bg-card ${!activePartnerId ? 'hidden md:flex' : 'flex'}`}>
+        {activePartnerId ? (
+          <>
+            {/* Thread Header */}
+            <div className="p-3.5 border-b border-border flex items-center justify-between bg-card/60">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActivePartnerId(null)}
+                  className="md:hidden p-1 rounded-lg text-muted-foreground hover:bg-muted"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+
+                <Avatar
+                  src={activePartner?.avatarUrl}
+                  name={`${activePartner?.firstName || 'User'} ${activePartner?.lastName || ''}`}
+                  size="sm"
+                />
+
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-bold text-xs text-foreground">
+                      {activePartner?.firstName || 'Campus User'} {activePartner?.lastName || ''}
+                    </h3>
+                    {activePartner?.verificationStatus === 'verified' && (
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                    )}
+                  </div>
+                  {activePartner?.userType && (
+                    <p className="text-[10px] text-muted-foreground capitalize">
+                      {activePartner.userType}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Pinned Context Banner (if listing/request attached) */}
+              {currentContextTitle && (
+                <div className="hidden sm:block text-right max-w-xs">
+                  <p className="text-[10px] text-muted-foreground">Inquiring about:</p>
+                  <p className="text-xs font-semibold text-emerald-600 truncate">
+                    {currentContextTitle}
+                  </p>
+                </div>
+              )}
+            </div>
+
 
