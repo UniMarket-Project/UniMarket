@@ -125,3 +125,27 @@ export function AdminDashboardPage() {
         </div>
       </div>
 
+ {/* Tabs */}
+      <div className="flex gap-2 border-b border-border pb-3">
+        <button
+          onClick={() => setActiveTab('verifications')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'verifications'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          Pending Verifications ({verifications.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'reports'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          Open Reports ({reports.length})
+        </button>
+      </div>
