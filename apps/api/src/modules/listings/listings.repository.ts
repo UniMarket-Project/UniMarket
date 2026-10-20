@@ -1,5 +1,6 @@
 import { prisma } from '../../platform/database/prisma.client.js';
 import type { Prisma } from '@prisma/client';
+import type { ListingsSearchParams } from './listings.search.js';
 
 export class ListingsRepository {
   public static async create(data: Prisma.ListingUncheckedCreateInput) {
@@ -52,5 +53,25 @@ export class ListingsRepository {
         status: 'removed',
       },
     });
+  }
+
+  public static async search(params: ListingsSearchParams) {
+    const { where, orderBy, skip, take } = params;
+    const [total, listings] = await Promise.all([
+      prisma.listing.count({ where }),
+      prisma.listing.findMany({
+        where,
+        skip,
+        take,
+        orderBy,
+        include: {
+          createdBy: {
+            include: { profile: true },
+          },
+        },
+      }),
+    ]);
+
+    return { total, listings };
   }
 }
