@@ -15,3 +15,17 @@ export function useNavBadges() {
     enabled: isAuthenticated,
     refetchInterval: 15000,
   });
+    // 2. Pending or active deals for current user
+  const { data: dealsCount } = useQuery({
+    queryKey: ["pending-deals-count"],
+    queryFn: async () => {
+      const res = await api.get("/transactions");
+      const txs = res.data.data?.transactions || [];
+      return txs.filter(
+        (t: any) => t.status === "pending" || t.status === "in_progress",
+      ).length as number;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 20000,
+  });
+
