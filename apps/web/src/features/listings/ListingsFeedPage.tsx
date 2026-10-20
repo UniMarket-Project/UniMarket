@@ -4,16 +4,12 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '../../shared/api/api-client';
 import { useAuthStore } from '../auth/auth.store';
 import { ListingCard, ListingItem } from './ListingCard';
+import { ListingFilters } from './ListingFilters';
 import { Button } from '../../shared/components/ui/Button';
 import {
   Search,
   PlusCircle,
-  BookOpen,
-  Laptop,
-  Home,
-  PenTool,
   Wrench,
-  Bus,
   ShieldCheck,
   Briefcase,
   AlertTriangle,
@@ -24,52 +20,48 @@ import {
   Package,
 } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'all', label: 'All Items', icon: null },
-  { id: 'Academic Books', label: 'Academic Books', icon: BookOpen },
-  { id: 'Electronics', label: 'Electronics', icon: Laptop },
-  { id: 'Dorm Essentials', label: 'Dorm Essentials', icon: Home },
-  { id: 'Stationery', label: 'Stationery', icon: PenTool },
-  { id: 'Services', label: 'Services', icon: Wrench },
-  { id: 'Transport', label: 'Transport', icon: Bus },
-];
-
-const TRANSACTION_TYPES = [
-  { id: 'all', label: 'All Deals' },
-  { id: 'sell', label: 'To Buy' },
-  { id: 'rent', label: 'To Rent' },
-  { id: 'lend', label: 'Borrow / Lend' },
-  { id: 'service', label: 'Services' },
-];
-
 export function ListingsFeedPage() {
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const queryParam = searchParams.get('q') || '';
-  const [search, setSearch] = useState(queryParam);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [page, setPage] = useState<number>(1);
+
+  // Extract all filter state directly from URL query string
+  const q = searchParams.get('q') || '';
+  const category = searchParams.get('category') || 'all';
+  const transactionType = searchParams.get('type') || searchParams.get('transactionType') || 'all';
+  const minPrice = searchParams.get('minPrice') || '';
+  const maxPrice = searchParams.get('maxPrice') || '';
+  const sortBy = searchParams.get('sortBy') || 'newest';
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+
+  // Price validation: min > max inline check before calling the API
+  const hasPriceError = Boolean(
+    minPrice && maxPrice && parseFloat(minPrice) > parseFloat(maxPrice)
+  );
 
   const userUni = user?.universityCode || 'AAU';
-  const [selectedUni, setSelectedUni] = useState<string>(userUni);
+  const [selectedUni, setSelectedUni] = useState<string>(searchParams.get('universityCode') || userUni);
 
   const isAdmin = user?.role === 'admin';
   const isProvider = user?.userType === 'provider' || user?.userType === 'business';
 
-  // 1. Fetch Listings (20 per page)
+  // 1. Fetch Listings (20 per page, halted if price validation fails)
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['listings', { search: queryParam, category: selectedCategory, type: selectedType, university: selectedUni, page }],
+    queryKey: ['listings', { q, category, transactionType, minPrice, maxPrice, sortBy, university: selectedUni, page }],
     queryFn: async () => {
       const params: Record<string, string> = { limit: '20', page: String(page) };
-      if (queryParam) params.q = queryParam;
-      if (selectedCategory !== 'all') params.category = selectedCategory;
-      if (selectedType !== 'all') params.transactionType = selectedType;
+      if (q) params.q = q;
+      if (category !== 'all') params.category = category;
+      if (transactionType !== 'all') params.transactionType = transactionType;
+      if (minPrice && !hasPriceError) params.minPrice = minPrice;
+      if (maxPrice && !hasPriceError) params.maxPrice = maxPrice;
+      if (sortBy && sortBy !== 'newest') params.sortBy = sortBy;
       if (selectedUni && selectedUni !== 'ALL') params.universityCode = selectedUni;
 
       const res = await api.get('/listings', { params });
       return res.data.data;
     },
+    enabled: !hasPriceError,
   });
 
   // 2. Fetch Admin Live Stats (only if admin)
@@ -98,14 +90,14 @@ export function ListingsFeedPage() {
   const ownListingsCount = user ? listings.filter((l) => l.createdBy?.userId === user.userId).length : 0;
   const displayListings = user ? listings.filter((l) => l.createdBy?.userId !== user.userId) : listings;
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    if (search.trim()) {
-      setSearchParams({ q: search.trim() });
+  const handlePageChange = (newPage: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (newPage > 1) {
+      nextParams.set('page', String(newPage));
     } else {
-      setSearchParams({});
+      nextParams.delete('page');
     }
+    setSearchParams(nextParams, { replace: true });
   };
 
   return (
@@ -321,85 +313,42 @@ export function ListingsFeedPage() {
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* SEARCH AND FILTERS                                            */}
+      {/* SEARCH AND FILTERS (FE-10: Debounced, chips, price, sort)      */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={
-              isProvider
-                ? 'Search repair equipment, spare parts, campus services...'
-                : 'Search textbooks, calculators, dorm items...'
-            }
-            className="h-11 w-full rounded-xl border border-input bg-card pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
-        <Button type="submit" variant="primary" className="h-11 px-5">
-          Search
-        </Button>
-      </form>
-
-      {/* Category Horizontal Pill Scroller */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
-        {CATEGORIES.map((cat) => {
-          const isSelected = selectedCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold transition-all select-none ${
-                isSelected
-                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                  : 'bg-card text-muted-foreground border border-border hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
-              <span>{cat.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Deal Type Filter Tabs & Campus Selection */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
-        <div className="flex gap-1 bg-muted/60 p-1 rounded-xl overflow-x-auto">
-          {TRANSACTION_TYPES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => { setSelectedType(t.id); setPage(1); }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                selectedType === t.id
-                  ? 'bg-card text-foreground font-bold shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <ListingFilters isProvider={isProvider} />
 
         {/* Campus Selection Dropdown */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-semibold">📍 Campus:</span>
-          <select
-            value={selectedUni}
-            onChange={(e) => { setSelectedUni(e.target.value); setPage(1); }}
-            className="text-xs font-bold rounded-xl border border-input bg-card px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-          >
-            <option value={userUni}>My Campus ({userUni})</option>
-            <option value="AAU">AAU (Addis Ababa)</option>
-            <option value="ASTU">ASTU (Adama)</option>
-            <option value="AASTU">AASTU (Kilinto)</option>
-            <option value="HU">HU (Hawassa)</option>
-            <option value="JU">JU (Jimma)</option>
-            <option value="BDU">BDU (Bahir Dar)</option>
-            <option value="ALL">🌐 All Campuses</option>
-          </select>
-          <span className="text-xs text-muted-foreground hidden lg:inline pl-2 border-l border-border">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/70 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground font-semibold">📍 Campus:</span>
+            <select
+              value={selectedUni}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedUni(val);
+                const next = new URLSearchParams(searchParams);
+                if (val && val !== 'ALL') {
+                  next.set('universityCode', val);
+                } else {
+                  next.delete('universityCode');
+                }
+                next.delete('page');
+                setSearchParams(next, { replace: true });
+              }}
+              className="text-xs font-bold rounded-xl border border-input bg-card px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+            >
+              <option value={userUni}>My Campus ({userUni})</option>
+              <option value="AAU">AAU (Addis Ababa)</option>
+              <option value="ASTU">ASTU (Adama)</option>
+              <option value="AASTU">AASTU (Kilinto)</option>
+              <option value="HU">HU (Hawassa)</option>
+              <option value="JU">JU (Jimma)</option>
+              <option value="BDU">BDU (Bahir Dar)</option>
+              <option value="ALL">🌐 All Campuses</option>
+            </select>
+          </div>
+          <span className="text-muted-foreground font-medium">
             {displayListings.length} {displayListings.length === 1 ? 'item' : 'items'}
           </span>
         </div>
@@ -423,7 +372,16 @@ export function ListingsFeedPage() {
       )}
 
       {/* Listings Grid */}
-      {isLoading ? (
+      {hasPriceError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-8 text-center space-y-2">
+          <p className="text-sm text-amber-700 dark:text-amber-300 font-semibold">
+            Invalid price filter: Min price cannot be greater than max price.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Please adjust the price range above to view listings.
+          </p>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <div key={n} className="rounded-2xl border border-border bg-card p-4 h-72 animate-pulse space-y-3">
@@ -452,7 +410,7 @@ export function ListingsFeedPage() {
             </p>
           </div>
           <div className="flex justify-center gap-3">
-            <Button size="sm" onClick={() => { setSelectedCategory('all'); setSelectedType('all'); setSearchParams({}); setPage(1); }}>
+            <Button size="sm" onClick={() => setSearchParams({})}>
               Reset Filters
             </Button>
             <Link to="/create-request">
@@ -477,7 +435,7 @@ export function ListingsFeedPage() {
                 variant="outline"
                 size="sm"
                 disabled={page <= 1 || isLoading}
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
               >
                 Previous
               </Button>
@@ -488,7 +446,7 @@ export function ListingsFeedPage() {
                 variant="outline"
                 size="sm"
                 disabled={page >= totalPages || isLoading}
-                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
               >
                 Next
               </Button>
