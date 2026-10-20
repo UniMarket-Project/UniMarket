@@ -77,3 +77,51 @@ export function AdminDashboardPage() {
 
   const verifications = verificationsData || [];
   const reports = reportsData || [];
+  return (
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-3 py-0.5 text-xs font-semibold mb-1">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          <span>Campus Administration & Trust Oversight</span>
+        </div>
+        <h1 className="text-2xl font-extrabold text-foreground">Admin Portal</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Review student ID verifications, moderate reports, and inspect campus metrics.
+        </p>
+      </div>
+
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60">
+          <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">Pending IDs</p>
+          <p className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 mt-1">
+            {stats.pendingVerifications}
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200/60">
+          <p className="text-[11px] font-semibold text-red-800 dark:text-red-300">Open Reports</p>
+          <p className="text-2xl font-extrabold text-red-900 dark:text-red-200 mt-1">
+            {stats.openReports}
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <p className="text-[11px] font-semibold text-muted-foreground">Total Users</p>
+          <p className="text-2xl font-extrabold text-foreground mt-1">{stats.totalUsers}</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <p className="text-[11px] font-semibold text-muted-foreground">Active Listings</p>
+          <p className="text-2xl font-extrabold text-foreground mt-1">{stats.activeListings}</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60">
+          <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Deals Done</p>
+          <p className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">
+            {stats.completedDeals}
+          </p>
+        </div>
+      </div>
+
