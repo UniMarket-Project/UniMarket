@@ -36,3 +36,14 @@ export function AdminDashboardPage() {
       return res.data.data.reports;
     },
   });
+   // Verification Review Mutation
+  const reviewVerMutation = useMutation({
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: 'verified' | 'unverified'; rejectionReason?: string }) => {
+      await api.patch(`/admin/verifications/${id}`, { status, rejectionReason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-verifications'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+  });
+
