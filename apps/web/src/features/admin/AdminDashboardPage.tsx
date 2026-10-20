@@ -46,4 +46,23 @@ export function AdminDashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
     },
   });
-
+ // Report Resolve Mutation
+  const resolveReportMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: string }) => {
+      const res = await api.patch(`/admin/reports/${id}`, {
+        status: 'resolved',
+        action,
+        adminNotes: 'Resolved from admin dashboard',
+      });
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      const summary = data?.moderationSummary?.autoActionTaken || 'Moderation action executed.';
+      alert(`Moderation Escalation Outcome:\n\n${summary}`);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.error?.message || 'Failed to apply moderation action.');
+    },
+  });
