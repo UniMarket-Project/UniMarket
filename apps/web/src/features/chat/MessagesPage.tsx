@@ -68,3 +68,36 @@ export function MessagesPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  // Send Message Mutation
+  const sendMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const payload: any = {
+        recipientId: activePartnerId,
+        content: text,
+      };
+      if (activeListingId) payload.listingId = activeListingId;
+      if (activeRequestId) payload.requestId = activeRequestId;
+      const res = await api.post('/messages', payload);
+      return res.data.data.message;
+    },
+    onSuccess: () => {
+      setContent('');
+      queryClient.invalidateQueries({ queryKey: ['thread', activePartnerId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim() || !activePartnerId) return;
+    sendMutation.mutate(content.trim());
+  };
+
+  const activeConv = conversations.find((c: any) => {
+    const partner = c.user || c.participant;
+    return partner?.userId === activePartnerId;
+  });
+
+  const activePartner = activeConv ? (activeConv.user || activeConv.participant) : activePartnerFallback;
+  const currentContextTitle = activeConv?.context?.title || contextTitleFallback;
+
