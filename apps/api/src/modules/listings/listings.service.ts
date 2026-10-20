@@ -1,7 +1,7 @@
-import { prisma } from '../../platform/database/prisma.client.js';
 import { NotFoundError, ForbiddenError, ConflictError } from '../../platform/errors/http-errors.js';
 import { LIMITS, type CreateListingInput, type UpdateListingInput, type ListingsQueryInput } from '@unimarket/shared';
 import { ListingsRepository } from './listings.repository.js';
+import { buildListingsSearchQuery } from './listings.search.js';
 import type { Prisma } from '@prisma/client';
 
 export class ListingsService {
@@ -78,69 +78,18 @@ export class ListingsService {
   }
 
   public static async getListings(query: ListingsQueryInput) {
-    const { page, limit, q, category, transactionType, minPrice, maxPrice, sortBy, universityCode } = query;
-    const skip = (page - 1) * limit;
-
-    const where: Prisma.ListingWhereInput = {
-      status: 'active',
-      isDeleted: false,
-      expiresAt: { gt: new Date() },
-    };
-
-    if (category) {
-      where.category = category.toLowerCase();
-    }
-
-    if (transactionType) {
-      where.transactionType = transactionType;
-    }
-
-    if (universityCode && universityCode !== 'ALL') {
-      where.createdBy = { universityCode };
-    }
-
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) where.price.gte = minPrice;
-      if (maxPrice !== undefined) where.price.lte = maxPrice;
-    }
-
-    if (q) {
-      where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { category: { contains: q, mode: 'insensitive' } },
-      ];
-    }
-
-    let orderBy: Prisma.ListingOrderByWithRelationInput = { createdAt: 'desc' };
-    if (sortBy === 'price_asc') orderBy = { price: 'asc' };
-    if (sortBy === 'price_desc') orderBy = { price: 'desc' };
-
-    const [total, listings] = await Promise.all([
-      prisma.listing.count({ where }),
-      prisma.listing.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-        include: {
-          createdBy: {
-            include: { profile: true },
-          },
-        },
-      }),
-    ]);
+    const searchParams = buildListingsSearchQuery(query);
+    const { total, listings } = await ListingsRepository.search(searchParams);
 
     const items = listings.map((l) => this.formatListingSummary(l));
 
     return {
       listings: items,
       pagination: {
-        page,
-        limit,
+        page: query.page,
+        limit: query.limit,
         total,
-        hasMore: skip + items.length < total,
+        hasMore: searchParams.skip + items.length < total,
       },
     };
   }
