@@ -28,4 +28,13 @@ export function useNavBadges() {
     enabled: isAuthenticated,
     refetchInterval: 20000,
   });
+ // 3. Open campus student demands
+  const { data: demandsCount } = useQuery({
+    queryKey: ["active-demands-count"],
+    queryFn: async () => {
+      const res = await api.get("/requests?status=open&limit=1");
+      return (res.data.data?.pagination?.total || 0) as number;
+    },
+    refetchInterval: 30000,
+  });
 
