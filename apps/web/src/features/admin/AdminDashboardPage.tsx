@@ -19,3 +19,20 @@ export function AdminDashboardPage() {
       return res.data.data;
     },
   });
+   // 2. Fetch Verifications
+  const { data: verificationsData, isLoading: verLoading } = useQuery({
+    queryKey: ['admin-verifications'],
+    queryFn: async () => {
+      const res = await api.get('/admin/verifications?status=pending');
+      return res.data.data.verifications;
+    },
+  });
+
+  // 3. Fetch Reports
+  const { data: reportsData, isLoading: reportsLoading } = useQuery({
+    queryKey: ['admin-reports'],
+    queryFn: async () => {
+      const res = await api.get('/admin/reports?status=submitted');
+      return res.data.data.reports;
+    },
+  });
