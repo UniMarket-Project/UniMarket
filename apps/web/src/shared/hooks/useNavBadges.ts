@@ -37,4 +37,7 @@ export function useNavBadges() {
     },
     refetchInterval: 30000,
   });
+ const unreadMessagesCount = messagesCount || 0;
+const pendingDealsCount = dealsCount || 0;
+const activeDemandsCount = demandsCount || 0;
 
