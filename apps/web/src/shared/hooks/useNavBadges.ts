@@ -40,4 +40,14 @@ export function useNavBadges() {
  const unreadMessagesCount = messagesCount || 0;
 const pendingDealsCount = dealsCount || 0;
 const activeDemandsCount = demandsCount || 0;
+  return {
+    unreadMessagesCount,
+    hasUnreadMessages: unreadMessagesCount > 0,
+    pendingDealsCount,
+    hasPendingDeals: pendingDealsCount > 0,
+    activeDemandsCount,
+    hasActiveDemands: activeDemandsCount > 0,
+  };
+}
+
 
