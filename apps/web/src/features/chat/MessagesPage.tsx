@@ -26,4 +26,45 @@ export function MessagesPage() {
   const [activePartnerFallback] = useState<any>(initialPartner);
   const [contextTitleFallback] = useState<string | null>(initialContextTitle);
   const [content, setContent] = useState('');
-}
+ // 1. Fetch Conversations
+  const { data: convData, isLoading: convsLoading } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: async () => {
+      const res = await api.get('/messages/conversations');
+      return res.data.data.conversations || [];
+    },
+    refetchInterval: 5000, // Poll every 5s for new messages
+  });
+
+  const conversations = convData || [];
+
+  // Default to first conversation or route partner
+  useEffect(() => {
+    if (!activePartnerId && conversations.length > 0) {
+      const first = conversations[0];
+      const partner = first.user || first.participant;
+      if (partner?.userId) {
+        setActivePartnerId(partner.userId);
+        setActiveListingId(first.context?.listingId || null);
+      }
+    }
+  }, [conversations, activePartnerId]);
+
+  // 2. Fetch Thread Messages for Active Partner
+  const { data: threadData, isLoading: threadLoading } = useQuery({
+    queryKey: ['thread', activePartnerId],
+    queryFn: async () => {
+      if (!activePartnerId) return [];
+      const res = await api.get(`/messages/conversations/${activePartnerId}`);
+      return res.data.data.messages || [];
+    },
+    enabled: !!activePartnerId,
+    refetchInterval: 3000,
+  });
+
+  const messages = threadData || [];
+
+  // Auto-scroll to bottom of thread
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
