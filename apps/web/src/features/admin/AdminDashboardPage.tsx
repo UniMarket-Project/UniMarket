@@ -234,3 +234,197 @@ export function AdminDashboardPage() {
           )}
         </div>
       )}
+ {/* Tab 2: Reports Queue */}
+      {activeTab === 'reports' && (
+        <div className="space-y-4">
+          {reportsLoading ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">Loading reports...</div>
+          ) : reports.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-border rounded-3xl bg-card">
+              <CheckCircle className="h-10 w-10 text-emerald-600 mx-auto mb-2" />
+              <p className="text-sm font-bold">No Open Reports</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Zero active reports requiring moderation action.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((r: any) => {
+                const targetUserReports = r.targetUser?.totalReports ?? r.reportCountOnTarget ?? 1;
+                const listingReports = r.targetListing?.reportCount ?? (r.reportType === 'listing' ? r.reportCountOnTarget : 0);
+
+                return (
+                  <div
+                    key={r.reportId}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4 hover:border-border/80 transition-all"
+                  >
+                    {/* Top Row: Category & Created Date */}
+                    <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-xs uppercase px-2.5 py-0.5 rounded-lg bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                          {r.category}
+                        </span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">
+                          Report Type: {r.reportType}
+                        </span>
+                      </div>
+
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(r.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Reported Target Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* Reported Account Info */}
+                      <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Reported Account:</p>
+                        {r.targetUser ? (
+                          <div>
+                            <p className="font-bold text-sm text-foreground">
+                              {r.targetUser.firstName} {r.targetUser.lastName}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">{r.targetUser.email}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                Total User Reports: {targetUserReports}
+                              </span>
+                              {targetUserReports >= 9 && (
+                                <span className="text-[10px] text-red-600 font-extrabold">
+                                  ⚠️ Critical (Ban at 10)
+                                </span>
+                              )}
+                              {targetUserReports % 3 === 2 && targetUserReports < 9 && (
+                                <span className="text-[10px] text-amber-600 font-bold">
+                                  ⚠️ Next report triggers 2-week suspension
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">User ID: {r.targetId}</p>
+                        )}
+                      </div>
+
+                      {/* Reported Listing Info (if listing) */}
+                      <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Reported Listing:</p>
+                        {r.targetListing ? (
+                          <div>
+                            <p className="font-bold text-sm text-foreground truncate">
+                              {r.targetListing.title}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              Listing Status: {r.targetListing.status}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                                Listing Reports: {listingReports}
+                              </span>
+                              {listingReports >= 2 && (
+                                <span className="text-[10px] text-red-600 font-extrabold">
+                                  ⚠️ 3rd report auto-removes item
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : r.reportType === 'listing' ? (
+                          <p className="text-muted-foreground italic">Listing ID: {r.targetId}</p>
+                        ) : (
+                          <p className="text-muted-foreground italic">Direct user report (No listing involved)</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Report Content & Reporter Info */}
+                    <div className="space-y-2">
+                      <div className="p-3 rounded-xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/50">
+                        <p className="text-[10px] font-semibold text-red-800 dark:text-red-300 uppercase mb-0.5">
+                          Report Description / Allegation:
+                        </p>
+                        <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
+                          "{r.description}"
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs px-1 text-muted-foreground">
+                        <p>
+                          Filed by Reporter:{' '}
+                          <strong className="text-foreground">
+                            {r.reporter.firstName} {r.reporter.lastName}
+                          </strong>
+                        </p>
+                        <span className="text-[10px]">
+                          Rule policy: 3 reports = 14-day suspension • 10 reports = permanent ban
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-border/60">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={resolveReportMutation.isPending}
+                        onClick={() =>
+                          resolveReportMutation.mutate({ id: r.reportId, action: 'none' })
+                        }
+                      >
+                        Dismiss Report
+                      </Button>
+
+                      {r.reportType === 'listing' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={resolveReportMutation.isPending}
+                          onClick={() =>
+                            resolveReportMutation.mutate({
+                              id: r.reportId,
+                              action: 'remove_listing',
+                            })
+                          }
+                        >
+                          Remove Listing & Escalate
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950"
+                        disabled={resolveReportMutation.isPending}
+                        onClick={() =>
+                          resolveReportMutation.mutate({
+                            id: r.reportId,
+                            action: 'warn_user',
+                          })
+                        }
+                      >
+                        Warn Account
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                        disabled={resolveReportMutation.isPending}
+                        onClick={() =>
+                          resolveReportMutation.mutate({
+                            id: r.reportId,
+                            action: 'suspend_user',
+                          })
+                        }
+                      >
+                        Suspend User (14 Days)
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
