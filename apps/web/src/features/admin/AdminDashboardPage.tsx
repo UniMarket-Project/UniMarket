@@ -66,3 +66,14 @@ export function AdminDashboardPage() {
       alert(err.response?.data?.error?.message || 'Failed to apply moderation action.');
     },
   });
+
+   const stats = statsData || {
+    pendingVerifications: 0,
+    openReports: 0,
+    totalUsers: 0,
+    activeListings: 0,
+    completedDeals: 0,
+  };
+
+  const verifications = verificationsData || [];
+  const reports = reportsData || [];
