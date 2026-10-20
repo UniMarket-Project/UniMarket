@@ -1,18 +1,17 @@
-export interface NavBadges {
-  hasUnreadMessages: boolean;
-  unreadMessagesCount: number;
-  hasPendingDeals: boolean;
-  pendingDealsCount: number;
-  hasActiveDemands: boolean;
-  [key: string]: any;
-}
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/api-client";
+import { useAuthStore } from "../../features/auth/auth.store";
 
-export const useNavBadges = (): NavBadges => ({
-  hasUnreadMessages: false,
-  unreadMessagesCount: 0,
-  hasPendingDeals: false,
-  pendingDealsCount: 0,
-  hasActiveDemands: false,
-});
+export function useNavBadges() {
+  const { isAuthenticated } = useAuthStore();
 
-export default useNavBadges;
+  // 1. Unread chat messages
+  const { data: messagesCount } = useQuery({
+    queryKey: ["unread-messages-count"],
+    queryFn: async () => {
+      const res = await api.get("/messages/unread-count");
+      return (res.data.data?.unreadCount || 0) as number;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 15000,
+  });
