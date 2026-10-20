@@ -149,3 +149,88 @@ export function AdminDashboardPage() {
           Open Reports ({reports.length})
         </button>
       </div>
+       {/* Tab 1: Verifications Queue */}
+      {activeTab === 'verifications' && (
+        <div className="space-y-4">
+          {verLoading ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">Loading queue...</div>
+          ) : verifications.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-border rounded-3xl bg-card">
+              <CheckCircle className="h-10 w-10 text-emerald-600 mx-auto mb-2" />
+              <p className="text-sm font-bold">Queue is Clear</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                All submitted student IDs have been reviewed.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {verifications.map((v: any) => (
+                <div
+                  key={v.verificationId}
+                  className="rounded-2xl border border-border bg-card p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-foreground">
+                        {v.user.firstName} {v.user.lastName}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground uppercase">
+                        {v.universityCode || 'AAU'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Student ID (Decrypted): <strong className="text-foreground">{v.studentId || v.nationalId}</strong>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Submitted on {new Date(v.createdAt).toLocaleDateString()}
+                    </p>
+
+                    {v.documentUrl && (
+                      <a
+                        href={v.documentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold hover:underline pt-1"
+                      >
+                        <span>View Uploaded ID Photo</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        reviewVerMutation.mutate({
+                          id: v.verificationId,
+                          status: 'unverified',
+                          rejectionReason: 'ID card blurry or invalid',
+                        })
+                      }
+                      isLoading={reviewVerMutation.isPending}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() =>
+                        reviewVerMutation.mutate({
+                          id: v.verificationId,
+                          status: 'verified',
+                        })
+                      }
+                      isLoading={reviewVerMutation.isPending}
+                    >
+                      Approve & Verify
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
