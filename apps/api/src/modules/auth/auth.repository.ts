@@ -8,4 +8,19 @@ export class AuthRepository {
   ) {
     return prisma.refreshToken.create({ data });
   }
+
+  // Add inside AuthRepository class in auth.repository.ts:
+  public static async findRefreshToken(tokenHash: string) {
+    return prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+  }
+
+  public static async revokeRefreshToken(id: string) {
+    return prisma.refreshToken.update({
+      where: { id },
+      data: { revokedAt: new Date() },
+    });
+  }
 }
