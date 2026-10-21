@@ -90,3 +90,59 @@ export class AuthService {
       refreshToken: rawRefreshToken,
     };
   }
+
+
+  public static async login(input: LoginInput) {
+    const user = await prisma.user.findUnique({
+      where: { email: input.email.toLowerCase() },
+    });
+
+    if (!user || user.isDeleted) {
+      throw new UnauthorizedError('Invalid email or password', ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    const passwordValid = await comparePassword(input.password, user.passwordHash);
+    if (!passwordValid) {
+      throw new UnauthorizedError('Invalid email or password', ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    if (!user.isActive) {
+      throw new ForbiddenError('Account is suspended', ErrorCode.ACCOUNT_SUSPENDED, {
+        suspensionUntil: user.suspensionUntil,
+      });
+    }
+
+    const { accessToken, expiresIn } = signAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      userType: user.userType,
+      verificationStatus: user.verificationStatus,
+    });
+
+    const rawRefreshToken = generateOpaqueToken();
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    await AuthRepository.createRefreshToken({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    return {
+      user: {
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userType: user.userType,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+        universityCode: (user as any).universityCode ?? 'AAU',
+      },
+      accessToken,
+      expiresIn,
+      refreshToken: rawRefreshToken,
+    };
+  }
