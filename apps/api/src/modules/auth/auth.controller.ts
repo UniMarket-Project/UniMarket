@@ -32,5 +32,63 @@ function isBodyTransportRequested(req: Request): boolean {
 }
 
 export class AuthController {
-  // Methods to be added in next commit
+  public static async register(req: Request, res: Response): Promise<void> {
+    const result = await AuthService.register(req.body);
+    const wantsBody = isBodyTransportRequested(req);
+
+    setRefreshCookie(res, result.refreshToken);
+
+    const responseData = {
+      user: result.user,
+      accessToken: result.accessToken,
+      expiresIn: result.expiresIn,
+      ...(wantsBody ? { refreshToken: result.refreshToken } : {}),
+    };
+
+    sendCreated(req, res, responseData);
+  }
+
+  public static async login(req: Request, res: Response): Promise<void> {
+    const result = await AuthService.login(req.body);
+    const wantsBody = isBodyTransportRequested(req);
+
+    setRefreshCookie(res, result.refreshToken);
+
+    const responseData = {
+      user: result.user,
+      accessToken: result.accessToken,
+      expiresIn: result.expiresIn,
+      ...(wantsBody ? { refreshToken: result.refreshToken } : {}),
+    };
+
+    sendSuccess(req, res, responseData);
+  }
+
+  public static async refresh(req: Request, res: Response): Promise<void> {
+    const cookieToken = req.cookies?.[REFRESH_COOKIE_NAME];
+    const bodyToken = req.body?.refreshToken;
+    const rawToken = cookieToken || bodyToken;
+
+    const result = await AuthService.refresh(rawToken);
+    const wantsBody = isBodyTransportRequested(req);
+
+    setRefreshCookie(res, result.refreshToken);
+
+    const responseData = {
+      accessToken: result.accessToken,
+      expiresIn: result.expiresIn,
+      ...(wantsBody ? { refreshToken: result.refreshToken } : {}),
+    };
+
+    sendSuccess(req, res, responseData);
+  }
+
+  public static async logout(req: Request, res: Response): Promise<void> {
+    const rawToken =
+      req.cookies?.[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
+    await AuthService.logout(rawToken);
+
+    clearRefreshCookie(res);
+    sendSuccess(req, res, { message: "Logged out successfully" });
+  }
 }
