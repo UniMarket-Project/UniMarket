@@ -3,6 +3,53 @@ import { prisma } from "../database/prisma.client.js";
 import { logger } from "../logger/logger.js";
 
 /**
+ * Unique 32-bit integer keys for Postgres session-level advisory locks
+ */
+export const ADVISORY_LOCK_IDS = {
+  EXPIRE_TRANSACTIONS: 1001,
+  ARCHIVE_LISTINGS: 1002,
+  EXPIRE_VERIFICATIONS: 1003,
+  LIFT_SUSPENSIONS: 1004,
+} as const;
+
+/**
+ * Execute a background job protected by a PostgreSQL session-level advisory lock.
+ * Ensures that in multi-instance API deployments, only one instance runs the job.
+ */
+export async function withAdvisoryLock(
+  lockId: number,
+  jobName: string,
+  task: () => Promise<number | void>
+): Promise<boolean> {
+  try {
+    const lockResult = await prisma.$queryRaw<Array<{ pg_try_advisory_lock: boolean }>>`
+      SELECT pg_try_advisory_lock(${lockId})
+    `;
+    const acquired = lockResult[0]?.pg_try_advisory_lock ?? false;
+
+    if (!acquired) {
+      logger.info(
+        { lockId, jobName },
+        "[Scheduler] Lock already held by another instance; skipping execution"
+      );
+      return false;
+    }
+
+    try {
+      await task();
+      return true;
+    } finally {
+      await prisma.$executeRaw`
+        SELECT pg_advisory_unlock(${lockId})
+      `;
+    }
+  } catch (err) {
+    logger.error({ err, lockId, jobName }, "[Scheduler] Error running job with advisory lock");
+    return false;
+  }
+}
+
+/**
  * Nightly at midnight: Expire stale transactions (older than 30 days)
  * Restores quantity to listing for in_progress transactions
  */
