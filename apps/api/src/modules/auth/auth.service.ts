@@ -25,3 +25,27 @@ export class AuthService {
     if (existingPhone) {
       throw new ConflictError('An account with this phone number already exists', ErrorCode.PHONE_TAKEN, { field: 'phone' });
     }
+        // Inside register method in auth.service.ts:
+    const passwordHash = await hashPassword(input.password);
+
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: input.email.toLowerCase(),
+          phone: input.phone,
+          passwordHash,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          userType: input.userType,
+          universityCode: input.universityCode ?? 'AAU',
+        },
+      });
+
+      await tx.userProfile.create({
+        data: {
+          userId: createdUser.id,
+        },
+      });
+
+      return createdUser;
+    });
