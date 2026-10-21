@@ -174,41 +174,41 @@ export async function liftExpiredSuspensions(): Promise<number> {
 }
 
 export function startBackgroundJobs(): void {
-  logger.info("[Scheduler] Initializing cron jobs");
+  logger.info("[Scheduler] Initializing cron jobs with advisory lock protection");
 
   // Nightly at midnight: Expire stale transactions
   cron.schedule("0 0 * * *", async () => {
-    try {
-      await expireStaleTransactions();
-    } catch (err) {
-      logger.error({ err }, "[Scheduler] Error in transaction expiry job");
-    }
+    await withAdvisoryLock(
+      ADVISORY_LOCK_IDS.EXPIRE_TRANSACTIONS,
+      "expireStaleTransactions",
+      expireStaleTransactions
+    );
   });
 
   // Nightly at 1:00 AM: Archive expired listings
   cron.schedule("0 1 * * *", async () => {
-    try {
-      await archiveExpiredListings();
-    } catch (err) {
-      logger.error({ err }, "[Scheduler] Error in listing archive job");
-    }
+    await withAdvisoryLock(
+      ADVISORY_LOCK_IDS.ARCHIVE_LISTINGS,
+      "archiveExpiredListings",
+      archiveExpiredListings
+    );
   });
 
   // Nightly at 2:00 AM: Expire yearly verifications
   cron.schedule("0 2 * * *", async () => {
-    try {
-      await expireYearlyVerifications();
-    } catch (err) {
-      logger.error({ err }, "[Scheduler] Error in verification expiry job");
-    }
+    await withAdvisoryLock(
+      ADVISORY_LOCK_IDS.EXPIRE_VERIFICATIONS,
+      "expireYearlyVerifications",
+      expireYearlyVerifications
+    );
   });
 
   // Hourly: Lift expired suspensions
   cron.schedule("0 * * * *", async () => {
-    try {
-      await liftExpiredSuspensions();
-    } catch (err) {
-      logger.error({ err }, "[Scheduler] Error in suspension lift job");
-    }
+    await withAdvisoryLock(
+      ADVISORY_LOCK_IDS.LIFT_SUSPENSIONS,
+      "liftExpiredSuspensions",
+      liftExpiredSuspensions
+    );
   });
 }
