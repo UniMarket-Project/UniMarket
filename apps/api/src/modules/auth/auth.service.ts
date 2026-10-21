@@ -146,3 +146,57 @@ export class AuthService {
       refreshToken: rawRefreshToken,
     };
   }
+
+
+  public static async refresh(rawRefreshToken: string) {
+    if (!rawRefreshToken) {
+      throw new UnauthorizedError('Refresh token required', ErrorCode.UNAUTHENTICATED);
+    }
+
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const storedToken = await AuthRepository.findRefreshToken(tokenHash);
+
+    if (!storedToken) {
+      throw new UnauthorizedError('Invalid refresh token', ErrorCode.UNAUTHENTICATED);
+    }
+
+    if (storedToken.revokedAt) {
+      await AuthRepository.revokeAllUserTokens(storedToken.userId);
+      throw new UnauthorizedError('Refresh token was revoked (possible reuse detected)', ErrorCode.UNAUTHENTICATED);
+    }
+
+    if (new Date() > storedToken.expiresAt) {
+      throw new UnauthorizedError('Refresh token expired', ErrorCode.TOKEN_EXPIRED);
+    }
+
+    const user = storedToken.user;
+    if (!user || user.isDeleted || !user.isActive) {
+      throw new UnauthorizedError('User account inactive or missing', ErrorCode.UNAUTHENTICATED);
+    }
+
+    await AuthRepository.revokeRefreshToken(storedToken.id);
+
+    const { accessToken, expiresIn } = signAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      userType: user.userType,
+      verificationStatus: user.verificationStatus,
+    });
+
+    const newRawRefreshToken = generateOpaqueToken();
+    const newTokenHash = hashRefreshToken(newRawRefreshToken);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    await AuthRepository.createRefreshToken({
+      userId: user.id,
+      tokenHash: newTokenHash,
+      expiresAt,
+    });
+
+    return {
+      accessToken,
+      expiresIn,
+      refreshToken: newRawRefreshToken,
+    };
+  }
