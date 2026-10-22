@@ -296,7 +296,7 @@ export class AdminService {
           description: r.description,
           status: r.status,
           reportCountOnTarget,
-          actionTaken: r.actionTaken,
+          actionTaken: (r as any).actionTaken ?? (r as any).action ?? null,
           adminNotes: r.adminNotes,
           createdAt: r.createdAt.toISOString(),
         };
@@ -378,7 +378,7 @@ export class AdminService {
         where: { id: reportId },
         data: {
           status: input.status,
-          actionTaken: input.action,
+          action: input.action,
           adminNotes: input.adminNotes,
           resolvedById: adminId,
           resolvedAt: new Date(),
