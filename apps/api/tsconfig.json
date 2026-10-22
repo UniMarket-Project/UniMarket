@@ -18,5 +18,5 @@
       "@unimarket/shared": ["../../packages/shared/dist/index.d.ts"]
     }
   },
-  "include": ["src/**/*", "prisma/**/*", "types/**/*"]
+  "include": ["src/**/*", "prisma/**/*", "types/**/*", "tests/**/*"]
 }
