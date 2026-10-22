@@ -26,7 +26,6 @@ export function SEO({
       meta.setAttribute('content', content);
     };
 
-    setMetaTag('name', 'description', description);
     setMetaTag('property', 'og:title', title);
     setMetaTag('property', 'og:description', description);
     setMetaTag('property', 'og:type', ogType);
@@ -34,5 +33,3 @@ export function SEO({
   }, [title, description, ogType]);
 
   return null;
-}
-
