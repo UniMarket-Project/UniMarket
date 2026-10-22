@@ -25,3 +25,12 @@ export function SEO({
       }
       meta.setAttribute('content', content);
     };
+        setMetaTag('name', 'description', description);
+    setMetaTag('property', 'og:title', title);
+    setMetaTag('property', 'og:description', description);
+    setMetaTag('property', 'og:type', ogType);
+    setMetaTag('property', 'og:site_name', 'UniMarket');
+  }, [title, description, ogType]);
+
+  return null;
+}
