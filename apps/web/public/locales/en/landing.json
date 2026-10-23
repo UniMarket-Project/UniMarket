@@ -1,0 +1,214 @@
+{
+  "nav": {
+    "campusBadge": "AAU CAMPUS",
+    "howItWorks": "How it works",
+    "categories": "Categories",
+    "waysToTrade": "Ways to trade",
+    "trust": "Trust & Safety",
+    "forWhom": "For Whom",
+    "faq": "FAQ",
+    "signIn": "Sign In",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "Addis Ababa University Campus Marketplace",
+    "title": "Your campus marketplace, built on trust.",
+    "subtitle": "Buy, sell, rent, lend and request anything from verified students and staff at Addis Ababa University. No strangers, no guesswork.",
+    "getStarted": "Get Started Free",
+    "browseListings": "Browse Listings",
+    "trustStrip": {
+      "verified": "Verified AAU members only",
+      "campus": "Campus-exclusive trades",
+      "confirm": "Two-sided deal confirmation",
+      "rate": "Rate every completed deal"
+    },
+    "mock": {
+      "card1": {
+        "title": "Calculus 7th Edition (James Stewart)",
+        "price": "ETB 450",
+        "category": "Academic Books",
+        "condition": "Like New",
+        "seller": "Abebe K. (4-Kilo)"
+      },
+      "card2": {
+        "title": "Electric Mini-Stove & Hotplate",
+        "price": "ETB 150 / mo",
+        "type": "To Rent",
+        "location": "Sidist Kilo Dorms"
+      },
+      "card3": {
+        "title": "Need: Laptop Charger & Screen Diagnostic",
+        "type": "Student Demand",
+        "badge": "Urgent",
+        "cta": "I Can Help"
+      },
+      "verifiedPill": "Verified AAU Student"
+    }
+  },
+  "categories": {
+    "badge": "Browse by Category",
+    "title": "Everything you need for campus life",
+    "subtitle": "Find course materials, electronics, and daily essentials from peers walking the same halls.",
+    "items": {
+      "academicBooks": {
+        "title": "Academic Books",
+        "desc": "Textbooks, exam references, handouts, and calculators"
+      },
+      "electronics": {
+        "title": "Electronics",
+        "desc": "Laptops, flash drives, scientific calculators, chargers"
+      },
+      "dormEssentials": {
+        "title": "Dorm Essentials",
+        "desc": "Mini-stoves, beddings, clothes hangers, room gear"
+      },
+      "stationery": {
+        "title": "Stationery",
+        "desc": "Notebooks, drawing instruments, project supplies"
+      },
+      "services": {
+        "title": "Campus Services",
+        "desc": "Peer tutoring, laptop repair, tailoring, campus errands"
+      },
+      "transport": {
+        "title": "Transport",
+        "desc": "Shared campus rides, bicycles, transit assistance"
+      }
+    },
+    "exploreAll": "Explore All Campus Listings"
+  },
+  "waysToTrade": {
+    "badge": "Flexible Campus Exchange",
+    "title": "More than just buying and selling",
+    "subtitle": "University life requires flexible ways to share resources without spending a fortune.",
+    "items": {
+      "buy": {
+        "title": "To Buy / Sell",
+        "desc": "Buy affordable items from senior students, or sell what you no longer need when a semester finishes."
+      },
+      "rent": {
+        "title": "To Rent",
+        "desc": "Rent appliances, lab gear, or textbooks for a week or a whole semester without paying full price."
+      },
+      "lend": {
+        "title": "Borrow / Lend",
+        "desc": "Free peer sharing of reference guides, calculators, and exam tools to help fellow campus members."
+      },
+      "services": {
+        "title": "Campus Services",
+        "desc": "Find student tutors for challenging courses, hardware repairs for dorm laptops, and everyday campus assistance."
+      },
+      "requests": {
+        "title": "Student Demands",
+        "desc": "Can't find what you need? Post a request on the demand board and let someone on campus tap 'I Can Help'."
+      }
+    }
+  },
+  "howItWorks": {
+    "badge": "Simple 4-Step Flow",
+    "title": "How UniMarket works on campus",
+    "subtitle": "From registration to deal completion, every step is designed for campus safety and transparency.",
+    "steps": {
+      "step1": {
+        "number": "01",
+        "title": "Sign up & get verified",
+        "desc": "Register with your credentials and submit your AAU Student ID. Administrators verify your account before you can list items."
+      },
+      "step2": {
+        "number": "02",
+        "title": "List an item or post a request",
+        "desc": "Take photos, set your price in ETB, or post a demand describing exactly what textbook or service you are seeking."
+      },
+      "step3": {
+        "number": "03",
+        "title": "Chat and agree on handover",
+        "desc": "Send private messages safely within UniMarket. Agree on a convenient campus meetup spot like the library or cafeteria."
+      },
+      "step4": {
+        "number": "04",
+        "title": "Meet, confirm together & rate",
+        "desc": "Inspect the item, exchange payment in person (cash or Telebirr/transfer), both tap confirm, and rate the deal 1-5 stars."
+      }
+    }
+  },
+  "trust": {
+    "badge": "Campus Safety First",
+    "title": "A marketplace built around verified trust",
+    "subtitle": "Unlike public social media groups, UniMarket protects you with identity verification and community accountability.",
+    "pillars": {
+      "verification": {
+        "title": "Verified University IDs",
+        "desc": "Every active seller and requester submits a university ID reviewed by campus administrators. Verified badges are clearly shown."
+      },
+      "twoSided": {
+        "title": "Two-Sided Deal Confirmation",
+        "desc": "Both the buyer and seller must confirm handover on their respective screens before a deal is officially recorded as completed."
+      },
+      "ratings": {
+        "title": "Peer Ratings & Reviews",
+        "desc": "Authentic 1-to-5 star feedback after completed deals helps you know who you are dealing with before meeting."
+      },
+      "moderation": {
+        "title": "Community Moderation & Reporting",
+        "desc": "Listings with 3 distinct reports are automatically hidden for admin review. Repeated violations lead to account suspension."
+      }
+    },
+    "notice": {
+      "title": "Campus Safe Meetup Notice",
+      "text": "Always meet in open campus locations (Library entrance, Student Lounge, Cafeteria). Inspect the item thoroughly before paying. Payment happens in-person (cash or mobile transfer)—UniMarket does not hold funds in escrow."
+    }
+  },
+  "forWhom": {
+    "badge": "Who Uses UniMarket",
+    "title": "Made for everyone on university grounds",
+    "subtitle": "Connecting students, faculty, and local campus service providers in one trusted ecosystem.",
+    "roles": {
+      "students": {
+        "title": "Undergraduate & Graduate Students",
+        "desc": "Save money on expensive textbooks, sell dorm gear before moving out, or find reliable course tutoring."
+      },
+      "staff": {
+        "title": "University Staff & Faculty",
+        "desc": "Offer academic mentoring, share specialized resources, or sell equipment safely within the university circle."
+      },
+      "providers": {
+        "title": "Campus Services & Local Providers",
+        "desc": "Local phone and laptop repair technicians, print and stationery providers reaching student clients directly."
+      }
+    }
+  },
+  "faq": {
+    "badge": "Frequently Asked Questions",
+    "title": "Got questions? We've got answers.",
+    "subtitle": "Everything you need to know about trading safely on the AAU campus network.",
+    "items": {
+      "q1": "Who can join and use UniMarket?",
+      "a1": "Currently, UniMarket is tailored for Addis Ababa University (AAU) students, faculty, staff, and authorized campus service providers. You can browse publicly, but listing items and initiating deals requires campus verification.",
+      "q2": "Is UniMarket free for students?",
+      "a2": "Yes, UniMarket is 100% free to join, browse, create listings, and post student demands.",
+      "q3": "How do payments work?",
+      "a3": "Payments happen directly and off-platform between the two parties when you meet on campus. You can pay with cash or direct mobile transfer (such as Telebirr or CBE). UniMarket does not process or hold payments online.",
+      "q4": "How do I get my account verified?",
+      "a4": "Navigate to the Verification tab in your profile and submit your AAU Student ID number or a clear photo of your campus ID card. University administrators review and approve valid submissions.",
+      "q5": "What should I do if a deal or item is suspicious?",
+      "a5": "Every listing and user profile features a 'Report' button. If a listing receives 3 reports, it is automatically hidden from the feed and forwarded to campus administration for investigation."
+    }
+  },
+  "finalCta": {
+    "title": "Ready to trade smarter on campus?",
+    "subtitle": "Join fellow students at Addis Ababa University. Find what you need, declutter your dorm, and support your campus peers today.",
+    "getStarted": "Get Started with AAU Account",
+    "browseCampus": "Browse Active Listings"
+  },
+  "footer": {
+    "tagline": "The verified, trusted campus marketplace for Addis Ababa University.",
+    "browse": "Browse Listings",
+    "demands": "Student Demands",
+    "signIn": "Sign In",
+    "register": "Register",
+    "safetyTips": "Campus Safety Tips",
+    "moderation": "Moderation & Reports",
+    "copyright": "© 2026 UniMarket. INSA Summer Program Graduation Project. All rights reserved."
+  }
+}
+
