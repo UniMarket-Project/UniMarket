@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api-client";
 import { useAuthStore } from "../auth/auth.store";
 import { formatETB } from "../../shared/utils/cn";
+import { Button } from "../../shared/components/ui/Button";
 import { Badge } from "../../shared/components/ui/Badge";
 import { Avatar } from "../../shared/components/ui/Avatar";
-import { Handshake } from "lucide-react";
+import { Modal } from "../../shared/components/ui/Modal";
+import { Handshake, CheckCircle2, Star } from "lucide-react";
 
 export function DealsPage() {
   const { user } = useAuthStore();
@@ -14,6 +16,9 @@ export function DealsPage() {
   const [activeTab, setActiveTab] = useState<
     "all" | "pending" | "in_progress" | "completed"
   >("all");
+  const [selectedDealForReview, setSelectedDealForReview] = useState<any>(null);
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingComment, setRatingComment] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["deals", activeTab],
@@ -26,6 +31,49 @@ export function DealsPage() {
   });
 
   const deals = data?.transactions || [];
+
+  // Mutations
+  const acceptMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/transactions/${id}/accept`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+    onError: (err: any) => {
+      alert(err.response?.data?.error?.message || "Failed to accept deal");
+    },
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: (id: string) =>
+      api.post(`/transactions/${id}/decline`, { reason: "Declined by seller" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+    onError: (err: any) => {
+      alert(err.response?.data?.error?.message || "Failed to decline deal");
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (id: string) =>
+      api.post(`/transactions/${id}/confirm`, { confirmed: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
+    onError: (err: any) => {
+      alert(err.response?.data?.error?.message || "Failed to confirm deal");
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async () => {
+      await api.post("/ratings", {
+        transactionId: selectedDealForReview.transactionId,
+        rating: ratingStars,
+        comment: ratingComment,
+      });
+    },
+    onSuccess: () => {
+      setSelectedDealForReview(null);
+      setRatingComment("");
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      alert("Review submitted! Thank you for building campus trust.");
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -85,9 +133,14 @@ export function DealsPage() {
           {deals.map((deal: any) => {
             const myId = user?.userId || (user as any)?.id;
             const buyerId = deal.buyer?.userId || deal.buyer?.id;
+            const sellerId = deal.seller?.userId || deal.seller?.id;
             const isBuyer = myId === buyerId;
+            const isSeller = myId === sellerId;
             const counterparty = isBuyer ? deal.seller : deal.buyer;
             const myRole = isBuyer ? "Buyer" : "Seller";
+            const userConfirmed = isBuyer
+              ? deal.buyerConfirmed
+              : deal.sellerConfirmed;
 
             return (
               <div
@@ -172,7 +225,9 @@ export function DealsPage() {
                       <span>
                         {deal.buyerConfirmed && deal.sellerConfirmed
                           ? "Both confirmed!"
-                          : "Confirmation in progress"}
+                          : userConfirmed
+                            ? "Waiting for counterparty"
+                            : "Your confirmation needed"}
                       </span>
                     </div>
 
@@ -201,10 +256,151 @@ export function DealsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Action Buttons based on status & role */}
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border/50">
+                  {/* PENDING ACTIONS */}
+                  {deal.status === "pending" && (
+                    <>
+                      {/* Seller can accept/decline if initiated by buyer */}
+                      {isSeller && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              declineMutation.mutate(deal.transactionId)
+                            }
+                            isLoading={declineMutation.isPending}
+                          >
+                            Decline Deal
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              acceptMutation.mutate(deal.transactionId)
+                            }
+                            isLoading={acceptMutation.isPending}
+                          >
+                            Accept Deal Request
+                          </Button>
+                        </>
+                      )}
+
+                      {isBuyer && (
+                        <p className="text-xs text-muted-foreground italic">
+                          Waiting for seller to accept your proposal...
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {/* IN PROGRESS ACTIONS */}
+                  {deal.status === "in_progress" && (
+                    <>
+                      {!userConfirmed ? (
+                        <Button
+                          size="sm"
+                          className="gap-1.5 shadow-sm"
+                          onClick={() =>
+                            confirmMutation.mutate(deal.transactionId)
+                          }
+                          isLoading={confirmMutation.isPending}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Confirm Handover Complete</span>
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>You confirmed completion</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+
+                  {/* COMPLETED ACTIONS */}
+                  {deal.status === "completed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-amber-600 border-amber-300 hover:bg-amber-50"
+                      onClick={() => setSelectedDealForReview(deal)}
+                    >
+                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                      <span>Leave Peer Review</span>
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Review & Rating Modal */}
+      {selectedDealForReview && (
+        <Modal
+          isOpen={!!selectedDealForReview}
+          onClose={() => setSelectedDealForReview(null)}
+          title="Rate Your Experience"
+          description="Your review helps keep the Ethiopian university campus community safe and trusted."
+        >
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                Star Rating
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingStars(star)}
+                    className="p-1.5 rounded-lg hover:scale-110 transition-transform"
+                  >
+                    <Star
+                      className={`h-7 w-7 ${
+                        star <= ratingStars
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300 dark:text-slate-600"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Your Review
+              </label>
+              <textarea
+                rows={3}
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                placeholder="Share your experience (punctuality, item condition, smooth handover)..."
+                className="w-full rounded-xl border border-input bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedDealForReview(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => reviewMutation.mutate()}
+                isLoading={reviewMutation.isPending}
+                disabled={!ratingComment.trim()}
+              >
+                Submit Review
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
