@@ -5,6 +5,7 @@ import { useAuthStore } from "../auth/auth.store";
 import { Avatar } from "../../shared/components/ui/Avatar";
 import { VerificationBadge } from "../../shared/components/ui/Badge";
 import { Button } from "../../shared/components/ui/Button";
+import { ListingCard } from "../listings/ListingCard";
 import { Star, MapPin, Package, MessageSquare } from "lucide-react";
 
 export function ProfilePage() {
@@ -89,6 +90,9 @@ export function ProfilePage() {
       </div>
     );
   }
+
+  const listings = listingsData || [];
+  const reviews = ratingsData || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -180,7 +184,7 @@ export function ProfilePage() {
 
           <div className="p-3 rounded-2xl bg-muted/40">
             <div className="text-foreground font-extrabold text-lg">
-              {profile.totalRatings || 0}
+              {profile.totalRatings || reviews.length}
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
               Reviews
@@ -196,6 +200,81 @@ export function ProfilePage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Active Listings Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground">
+            Listings by {profile.firstName} ({listings.length})
+          </h2>
+          {isMe && (
+            <Link to="/create-listing">
+              <Button size="sm">Add Listing</Button>
+            </Link>
+          )}
+        </div>
+
+        {listings.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No active listings currently posted.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {listings.map((l: any) => (
+              <ListingCard key={l.listingId} listing={l} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Reviews Section */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-foreground">
+          Campus Peer Reviews ({reviews.length})
+        </h2>
+
+        {reviews.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No reviews yet. Complete a deal with this student to leave the first
+            review!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((rev: any) => (
+              <div
+                key={rev.ratingId}
+                className="rounded-2xl border border-border bg-card p-4 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={rev.reviewer.avatarUrl}
+                      name={rev.reviewer.firstName}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="font-bold text-xs">
+                        {rev.reviewer.firstName}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-amber-500 text-xs font-bold">
+                    {"★".repeat(rev.rating)}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  "{rev.comment}"
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
