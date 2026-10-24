@@ -1,14 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
-import { useParams, Link } from 'react-router-dom';
-import { api } from '../../shared/api/api-client';
-import { useAuthStore } from '../auth/auth.store';
-import { Avatar } from '../../shared/components/ui/Avatar';
-import { VerificationBadge } from '../../shared/components/ui/Badge';
-import { Button } from '../../shared/components/ui/Button';
-import { ListingCard } from '../listings/ListingCard';
-import { RatingDistribution } from '../ratings/RatingDistribution';
-import { ReviewList } from '../ratings/ReviewList';
-import { Star, MapPin, Package, MessageSquare } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+import { useParams, Link } from "react-router-dom";
+import { api } from "../../shared/api/api-client";
+import { useAuthStore } from "../auth/auth.store";
+import { Avatar } from "../../shared/components/ui/Avatar";
+import { VerificationBadge } from "../../shared/components/ui/Badge";
+import { Button } from "../../shared/components/ui/Button";
+import { ListingCard } from "../listings/ListingCard";
+import { Star, MapPin, Package, MessageSquare } from "lucide-react";
 
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +16,7 @@ export function ProfilePage() {
 
   // 1. Fetch Profile
   const { data: profileData, isLoading: profileLoading } = useQuery({
-    queryKey: ['user-profile', targetUserId],
+    queryKey: ["user-profile", targetUserId],
     queryFn: async () => {
       if (!targetUserId) return null;
       const res = await api.get(`/users/${targetUserId}`);
@@ -29,7 +27,7 @@ export function ProfilePage() {
 
   // 2. Fetch User Listings
   const { data: listingsData } = useQuery({
-    queryKey: ['user-listings', targetUserId],
+    queryKey: ["user-listings", targetUserId],
     queryFn: async () => {
       if (!targetUserId) return [];
       const res = await api.get(`/users/${targetUserId}/listings`);
@@ -38,15 +36,13 @@ export function ProfilePage() {
     enabled: !!targetUserId,
   });
 
-  // 3. Fetch User Ratings Summary (Average, Total, Distribution)
-  const { data: ratingsSummaryData } = useQuery({
-    queryKey: ['user-ratings-summary', targetUserId],
+  // 3. Fetch User Reviews
+  const { data: ratingsData } = useQuery({
+    queryKey: ["user-ratings", targetUserId],
     queryFn: async () => {
-      if (!targetUserId) return null;
-      const res = await api.get(`/ratings/users/${targetUserId}`, {
-        params: { limit: 1 },
-      });
-      return res.data.data;
+      if (!targetUserId) return [];
+      const res = await api.get(`/ratings/users/${targetUserId}`);
+      return res.data.data.reviews || [];
     },
     enabled: !!targetUserId,
   });
@@ -85,7 +81,9 @@ export function ProfilePage() {
   if (!profile) {
     return (
       <div className="max-w-md mx-auto py-12 text-center space-y-2">
-        <p className="text-sm font-semibold text-foreground">User profile not found.</p>
+        <p className="text-sm font-semibold text-foreground">
+          User profile not found.
+        </p>
         <p className="text-xs text-muted-foreground">
           This user may have deleted their account or the ID is invalid.
         </p>
@@ -94,16 +92,12 @@ export function ProfilePage() {
   }
 
   const listings = listingsData || [];
-  const averageRating =
-    ratingsSummaryData?.averageRating ?? profile.averageRating ?? 0;
-  const totalRatings =
-    ratingsSummaryData?.totalRatings ?? profile.totalRatings ?? 0;
-  const distribution = ratingsSummaryData?.distribution || {};
+  const reviews = ratingsData || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header Profile Card */}
-      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
           <Avatar
             src={profile.avatarUrl}
@@ -127,7 +121,11 @@ export function ProfilePage() {
                 <VerificationBadge status={profile.verificationStatus} />
                 {isMe ? (
                   <Link to="/my-listings">
-                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-xs"
+                    >
                       <Package className="h-3.5 w-3.5 text-emerald-600" />
                       <span>Manage My Items</span>
                     </Button>
@@ -140,7 +138,11 @@ export function ProfilePage() {
                       partner: profile,
                     }}
                   >
-                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 text-xs"
+                    >
                       <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
                       <span>Message</span>
                     </Button>
@@ -169,21 +171,33 @@ export function ProfilePage() {
           <div className="p-3 rounded-2xl bg-muted/40">
             <div className="flex items-center justify-center gap-1 text-amber-500 font-extrabold text-lg">
               <Star className="h-4 w-4 fill-amber-500" />
-              <span>{averageRating ? Number(averageRating).toFixed(1) : '5.0'}</span>
+              <span>
+                {profile.averageRating
+                  ? profile.averageRating.toFixed(1)
+                  : "5.0"}
+              </span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Campus Rating</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              Campus Rating
+            </p>
           </div>
 
           <div className="p-3 rounded-2xl bg-muted/40">
-            <div className="text-foreground font-extrabold text-lg">{totalRatings}</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Reviews</p>
+            <div className="text-foreground font-extrabold text-lg">
+              {profile.totalRatings || reviews.length}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              Reviews
+            </p>
           </div>
 
           <div className="p-3 rounded-2xl bg-muted/40">
             <div className="text-emerald-600 dark:text-emerald-400 font-extrabold text-lg">
               {profile.totalTransactions || 0}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Completed Deals</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              Completed Deals
+            </p>
           </div>
         </div>
       </div>
@@ -214,26 +228,54 @@ export function ProfilePage() {
         )}
       </div>
 
-      {/* Ratings & Reviews Section (FE-17: Distribution & Paginated Reviews) */}
+      {/* Reviews Section */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-foreground">
-          Campus Peer Reviews ({totalRatings})
+          Campus Peer Reviews ({reviews.length})
         </h2>
 
-        {/* Rating Breakdown & Distribution */}
-        {totalRatings > 0 && (
-          <RatingDistribution
-            averageRating={Number(averageRating) || 0}
-            totalRatings={totalRatings}
-            distribution={distribution}
-          />
-        )}
+        {reviews.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No reviews yet. Complete a deal with this student to leave the first
+            review!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((rev: any) => (
+              <div
+                key={rev.ratingId}
+                className="rounded-2xl border border-border bg-card p-4 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={rev.reviewer.avatarUrl}
+                      name={rev.reviewer.firstName}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="font-bold text-xs">
+                        {rev.reviewer.firstName}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
 
-        {/* Paginated Reviews List with Sorting */}
-        {targetUserId && <ReviewList userId={targetUserId} />}
+                  <div className="flex items-center text-amber-500 text-xs font-bold">
+                    {"★".repeat(rev.rating)}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  "{rev.comment}"
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-export default ProfilePage;
