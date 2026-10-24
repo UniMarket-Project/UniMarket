@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { api, setAccessToken } from '../../shared/api/api-client';
+import { create } from "zustand";
+import { api, setAccessToken } from "../../shared/api/api-client";
 
 export interface AuthUser {
   userId: string;
@@ -7,9 +7,9 @@ export interface AuthUser {
   phone: string;
   firstName: string;
   lastName: string;
-  userType: 'student' | 'staff' | 'provider' | 'business';
-  role: 'user' | 'admin';
-  verificationStatus: 'unverified' | 'pending' | 'verified';
+  userType: "student" | "staff" | "provider" | "business";
+  role: "user" | "admin";
+  verificationStatus: "unverified" | "pending" | "verified";
   universityCode?: string;
   avatarUrl: string | null;
   bio?: string | null;
@@ -45,13 +45,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearAuth: () => {
     setAccessToken(null);
-    set({ user: null, isAuthenticated: false, isInitialized: true, isLoading: false });
+    set({
+      user: null,
+      isAuthenticated: false,
+      isInitialized: true,
+      isLoading: false,
+    });
   },
 
   login: async (email, password) => {
     set({ isLoading: true });
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post("/auth/login", { email, password });
       const { user, accessToken } = res.data.data;
       setAccessToken(accessToken);
       set({
@@ -72,7 +77,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (payload) => {
     set({ isLoading: true });
     try {
-      const res = await api.post('/auth/register', payload);
+      const res = await api.post("/auth/register", payload);
       const { user, accessToken } = res.data.data;
       setAccessToken(accessToken);
       set({
@@ -92,7 +97,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post("/auth/logout");
     } catch {
       // Ignore logout errors
     } finally {
@@ -104,13 +109,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchMe: async () => {
     try {
       // First attempt to refresh token via cookie
-      const refreshRes = await api.post('/auth/refresh');
+      const refreshRes = await api.post("/auth/refresh");
       const newToken = refreshRes.data?.data?.accessToken;
       if (newToken) {
         setAccessToken(newToken);
       }
 
-      const res = await api.get('/users/me');
+      const res = await api.get("/users/me");
       const { user, profile } = res.data.data;
       set({
         user: {

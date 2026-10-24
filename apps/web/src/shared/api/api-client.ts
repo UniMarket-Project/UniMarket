@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 let accessToken: string | null = null;
 
@@ -11,10 +11,10 @@ export function getAccessToken(): string | null {
 }
 
 export const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: "/api/v1",
   withCredentials: true, // Send HTTP-only refresh cookies
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -33,7 +33,10 @@ let failedQueue: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: AxiosError | null, token: string | null = null) => {
+const processQueue = (
+  error: AxiosError | null,
+  token: string | null = null,
+) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -47,10 +50,15 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+      if (
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/refresh")
+      ) {
         return Promise.reject(error);
       }
 
@@ -72,9 +80,9 @@ api.interceptors.response.use(
 
       try {
         const refreshResponse = await axios.post(
-          '/api/v1/auth/refresh',
+          "/api/v1/auth/refresh",
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const newAccessToken = refreshResponse.data?.data?.accessToken;
@@ -96,5 +104,5 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
