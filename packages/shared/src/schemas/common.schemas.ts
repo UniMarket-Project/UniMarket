@@ -5,7 +5,7 @@ import { REGEX } from "../constants/regex.js";
 export const uuidSchema = z.string().uuid({ message: "Must be a valid UUID" });
 
 export const ethiopianPhoneSchema = z.string().regex(REGEX.PHONE_ET, {
-  message: "Must be a valid Ethiopian phone number in E.164 format (+251...)",
+  message: "Please enter a valid Ethiopian phone number starting with +251 (e.g. +251911223344)",
 });
 
 export const locationSchema = z.object({

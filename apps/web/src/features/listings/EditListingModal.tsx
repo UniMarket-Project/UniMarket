@@ -5,6 +5,7 @@ import { Modal } from "../../shared/components/ui/Modal";
 import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { getErrorMessage } from "../../shared/utils/errors";
 
 const CATEGORIES = [
   "Academic Books",
@@ -127,10 +128,12 @@ export function EditListingModal({
       }, 1000);
     },
     onError: (err: any) => {
-      const msg =
-        err.response?.data?.error?.message ||
-        "Failed to update listing. Title needs 5+ characters and description needs 20+ characters.";
-      setErrorMsg(msg);
+      setErrorMsg(
+        getErrorMessage(
+          err,
+          "Failed to update listing. Title needs 5+ characters and description needs 20+ characters."
+        )
+      );
     },
   });
 

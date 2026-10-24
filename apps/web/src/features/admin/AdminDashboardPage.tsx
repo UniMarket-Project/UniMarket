@@ -7,6 +7,7 @@ import {
   CheckCircle,
   ExternalLink,
 } from 'lucide-react';
+import { getErrorMessage } from '../../shared/utils/errors';
 
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -63,7 +64,7 @@ export function AdminDashboardPage() {
       alert(`Moderation Escalation Outcome:\n\n${summary}`);
     },
     onError: (err: any) => {
-      alert(err.response?.data?.error?.message || 'Failed to apply moderation action.');
+      alert(getErrorMessage(err, 'Failed to apply moderation action.'));
     },
   });
 

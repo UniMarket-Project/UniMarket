@@ -21,14 +21,22 @@ export function validate(schema: ValidationSchema) {
         req.params = (await schema.params.parseAsync(req.params)) as Request['params'];
       }
       next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const details = error.errors.map((err) => ({
-          field: err.path.join('.'),
-          code: err.code.toUpperCase(),
-          message: err.message,
+    } catch (error: any) {
+      if (error instanceof ZodError || error?.name === 'ZodError') {
+        const issues = error.errors || error.issues || [];
+        const details = issues.map((err: any) => ({
+          field: Array.isArray(err.path) ? err.path.join('.') : String(err.path || ''),
+          code: String(err.code || 'VALIDATION_ERROR').toUpperCase(),
+          message: err.message || 'Invalid value',
         }));
-        next(new UnprocessableEntityError('Invalid request parameters', details));
+
+        // Build a clean, user-friendly aggregate message
+        const friendlySummary = details
+          .map((d: any) => d.message)
+          .filter(Boolean)
+          .join('. ');
+
+        next(new UnprocessableEntityError(friendlySummary || 'Validation failed', details));
       } else {
         next(error);
       }

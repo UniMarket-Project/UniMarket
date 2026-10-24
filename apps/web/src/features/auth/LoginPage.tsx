@@ -4,6 +4,7 @@ import { useAuthStore } from "./auth.store";
 import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
 import { GraduationCap, Sparkles } from "lucide-react";
+import { getErrorMessage } from "../../shared/utils/errors";
 
 const DEMO_ACCOUNTS = [
   {
@@ -64,7 +65,7 @@ export function LoginPage() {
       navigate("/");
     } catch (err: any) {
       setErrorMsg(
-        err.response?.data?.error?.message || "Invalid email or password",
+        getErrorMessage(err, "Invalid email or password. Please try again.")
       );
     }
   };
@@ -78,8 +79,7 @@ export function LoginPage() {
       navigate("/");
     } catch (err: any) {
       setErrorMsg(
-        err.response?.data?.error?.message ||
-          "Failed to login with demo account",
+        getErrorMessage(err, "Failed to login with demo account. Please try again.")
       );
     }
   };

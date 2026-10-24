@@ -6,6 +6,7 @@ import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
 import { VerificationBadge } from "../../shared/components/ui/Badge";
 import { Lock, CheckCircle2, Briefcase, GraduationCap } from "lucide-react";
+import { getErrorMessage } from "../../shared/utils/errors";
 
 export function VerificationPage() {
   const { user } = useAuthStore();
@@ -72,7 +73,7 @@ export function VerificationPage() {
     },
     onError: (err: any) => {
       setErrorMsg(
-        err.response?.data?.error?.message || "Verification submission failed",
+        getErrorMessage(err, "Verification submission failed. Please check your inputs.")
       );
     },
   });

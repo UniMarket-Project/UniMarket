@@ -22,6 +22,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { EditListingModal } from "./EditListingModal";
+import { getErrorMessage } from "../../shared/utils/errors";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -146,13 +147,14 @@ export function ListingDetailPage() {
       ) {
         setHasReportedLocally(true);
         setReportErrorMsg(
-          "You have already submitted a report for this post. You cannot report the same item more than once.",
+          "You have already submitted a report for this post. You cannot report the same item more than once."
         );
       } else {
         setReportErrorMsg(
-          errorData?.message ||
-            err.message ||
-            "Failed to submit report. Please describe the issue in at least 20 characters.",
+          getErrorMessage(
+            err,
+            "Failed to submit report. Please describe the issue in at least 20 characters."
+          )
         );
       }
     },

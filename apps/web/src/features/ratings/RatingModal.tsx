@@ -5,6 +5,7 @@ import { Modal } from '../../shared/components/ui/Modal';
 import { Button } from '../../shared/components/ui/Button';
 import { StarRating } from './StarRating';
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { getErrorMessage } from '../../shared/utils/errors';
 
 export interface DealForReview {
   transactionId: string;
@@ -68,18 +69,20 @@ export function RatingModal({
     },
     onError: (err: any) => {
       const code = err.response?.data?.error?.code;
-      const message = err.response?.data?.error?.message || '';
+      const rawMessage = err.response?.data?.error?.message || '';
 
       // Gracefully handle ALREADY_EXISTS or 409 Conflict error
       if (
         code === 'ALREADY_EXISTS' ||
         err.response?.status === 409 ||
-        message.toLowerCase().includes('already submitted')
+        rawMessage.toLowerCase().includes('already submitted')
       ) {
         setAlreadyExists(true);
         setErrorMessage('You have already submitted a review for this deal.');
       } else {
-        setErrorMessage(message || 'Failed to submit review. Please try again.');
+        setErrorMessage(
+          getErrorMessage(err, 'Failed to submit review. Please try again.')
+        );
       }
     },
   });

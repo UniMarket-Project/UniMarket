@@ -8,6 +8,7 @@ import { Badge } from "../../shared/components/ui/Badge";
 import { Avatar } from "../../shared/components/ui/Avatar";
 import { Modal } from "../../shared/components/ui/Modal";
 import { Handshake, CheckCircle2, Star } from "lucide-react";
+import { getErrorMessage } from "../../shared/utils/errors";
 
 export function DealsPage() {
   const { user } = useAuthStore();
@@ -37,7 +38,7 @@ export function DealsPage() {
     mutationFn: (id: string) => api.post(`/transactions/${id}/accept`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
     onError: (err: any) => {
-      alert(err.response?.data?.error?.message || "Failed to accept deal");
+      alert(getErrorMessage(err, "Failed to accept deal"));
     },
   });
 
@@ -46,7 +47,7 @@ export function DealsPage() {
       api.post(`/transactions/${id}/decline`, { reason: "Declined by seller" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
     onError: (err: any) => {
-      alert(err.response?.data?.error?.message || "Failed to decline deal");
+      alert(getErrorMessage(err, "Failed to decline deal"));
     },
   });
 
@@ -55,7 +56,7 @@ export function DealsPage() {
       api.post(`/transactions/${id}/confirm`, { confirmed: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals"] }),
     onError: (err: any) => {
-      alert(err.response?.data?.error?.message || "Failed to confirm deal");
+      alert(getErrorMessage(err, "Failed to confirm deal"));
     },
   });
 

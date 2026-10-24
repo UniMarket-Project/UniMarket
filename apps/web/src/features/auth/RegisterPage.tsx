@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "./auth.store";
 import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, AlertCircle } from "lucide-react";
+import { getErrorList } from "../../shared/utils/errors";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -18,11 +19,11 @@ export function RegisterPage() {
     "student",
   );
   const [universityCode, setUniversityCode] = useState("AAU");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorList, setErrorList] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
+    setErrorList([]);
     try {
       await register({
         firstName,
@@ -35,10 +36,9 @@ export function RegisterPage() {
       });
       navigate("/");
     } catch (err: any) {
-      const msg =
-        err.response?.data?.error?.message ||
-        "Registration failed. Please check inputs.";
-      setErrorMsg(msg);
+      setErrorList(
+        getErrorList(err, "Registration failed. Please check inputs.")
+      );
     }
   };
 
@@ -57,9 +57,25 @@ export function RegisterPage() {
       </div>
 
       <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 text-red-700 dark:text-red-300 text-xs font-medium">
-            {errorMsg}
+        {errorList.length > 0 && (
+          <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-xs font-medium space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-red-800 dark:text-red-200">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+              <span>
+                {errorList.length > 1
+                  ? "Please correct the following errors:"
+                  : "Unable to register"}
+              </span>
+            </div>
+            {errorList.length > 1 ? (
+              <ul className="list-disc pl-5 space-y-1">
+                {errorList.map((errItem, idx) => (
+                  <li key={idx}>{errItem}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="pl-5.5">{errorList[0]}</p>
+            )}
           </div>
         )}
 

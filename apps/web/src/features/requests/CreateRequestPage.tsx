@@ -6,6 +6,7 @@ import { useAuthStore } from '../auth/auth.store';
 import { Input } from '../../shared/components/ui/Input';
 import { Button } from '../../shared/components/ui/Button';
 import { ArrowLeft, ShieldAlert, AlertTriangle, ArrowLeftRight } from 'lucide-react';
+import { getErrorMessage } from '../../shared/utils/errors';
 
 const CATEGORIES = [
   'Academic Books',
@@ -56,10 +57,12 @@ export function CreateRequestPage() {
       navigate('/requests');
     },
     onError: (err: any) => {
-      const msg =
-        err.response?.data?.error?.message ||
-        'Failed to post demand. Please verify your title (min 5 chars) and description (min 20 chars).';
-      setErrorMsg(msg);
+      setErrorMsg(
+        getErrorMessage(
+          err,
+          'Failed to post demand. Please verify your title (min 5 chars) and description (min 20 chars).'
+        )
+      );
     },
   });
 
