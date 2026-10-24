@@ -10,6 +10,7 @@ import { transactionsRouter } from "./modules/transactions/transactions.routes.j
 import { ratingsRouter } from "./modules/ratings/ratings.routes.js";
 import { reportsRouter } from "./modules/reports/reports.routes.js";
 import { notificationsRouter } from "./modules/notifications/notifications.routes.js";
+import { paymentsRouter } from "./modules/payments/payments.routes.js";
 import { adminRouter } from "./modules/admin/admin.routes.js";
 
 export const apiV1Router = Router();
@@ -22,6 +23,7 @@ apiV1Router.use("/listings", listingsRouter);
 apiV1Router.use("/requests", requestsRouter);
 apiV1Router.use("/messages", messagesRouter);
 apiV1Router.use("/transactions", transactionsRouter);
+apiV1Router.use("/payments", paymentsRouter);
 apiV1Router.use("/ratings", ratingsRouter);
 apiV1Router.use("/reports", reportsRouter);
 apiV1Router.use("/notifications", notificationsRouter);
