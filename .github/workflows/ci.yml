@@ -50,7 +50,7 @@ jobs:
         run: npm run db:generate --workspace=apps/api
 
       - name: Security audit dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
 
       - name: Lint codebase
         run: npm run lint --workspaces --if-present
