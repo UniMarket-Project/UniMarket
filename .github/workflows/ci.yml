@@ -59,6 +59,14 @@ jobs:
         run: npm run typecheck --workspaces --if-present
 
       - name: Run automated tests
+        env:
+          NODE_ENV: test
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/unimarket_test?schema=public"
+          JWT_ACCESS_SECRET: "test_jwt_access_secret_min_16_chars"
+          JWT_REFRESH_SECRET: "test_jwt_refresh_secret_min_16_chars"
+          ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+          HMAC_SECRET: "test_hmac_secret_min_16_chars"
+          STORAGE_PROVIDER: "local"
         run: npm run test --workspaces --if-present
 
       - name: Verify Backend API Build

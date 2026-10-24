@@ -1,3 +1,11 @@
+// Ensure required environment variables exist for isolated unit tests
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://mock:mock@localhost:5432/mock_test';
+process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'test_jwt_access_secret_min_16_chars';
+process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test_jwt_refresh_secret_min_16_chars';
+process.env.ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+process.env.HMAC_SECRET = process.env.HMAC_SECRET || 'test_hmac_secret_min_16_chars';
+
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { LocalStorageProvider } from '../../src/platform/storage/local.storage.js';
