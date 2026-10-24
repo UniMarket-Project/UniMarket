@@ -12,6 +12,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed/index.ts",
     "db:studio": "prisma studio",
+    "test": "tsx --test tests/unit/*.test.ts",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "tsx --test tests/e2e/*.e2e.ts",
     "typecheck": "tsc --noEmit"
   },

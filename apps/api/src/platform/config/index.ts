@@ -25,12 +25,15 @@ export const config = {
   },
   storage: {
     provider: env.STORAGE_PROVIDER,
-    endpoint: env.S3_ENDPOINT,
-    region: env.S3_REGION,
-    bucket: env.S3_BUCKET,
-    accessKey: env.S3_ACCESS_KEY,
-    secretKey: env.S3_SECRET_KEY,
-    publicUrl: env.S3_PUBLIC_URL,
+    r2: {
+      accountId: env.R2_ACCOUNT_ID,
+      accessKeyId: env.R2_ACCESS_KEY_ID,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      bucketName: env.R2_BUCKET_NAME,
+      publicUrl: env.R2_PUBLIC_URL,
+      endpoint: env.R2_ENDPOINT,
+    },
+    publicUrl: env.R2_PUBLIC_URL || `http://localhost:${env.PORT}/uploads`,
   },
 } as const;
 
