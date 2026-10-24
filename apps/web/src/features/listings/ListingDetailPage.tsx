@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../shared/api/api-client';
-import { useAuthStore } from '../auth/auth.store';
-import { formatETB } from '../../shared/utils/cn';
-import { Button } from '../../shared/components/ui/Button';
-import { Badge, VerificationBadge } from '../../shared/components/ui/Badge';
-import { Avatar } from '../../shared/components/ui/Avatar';
-import { Modal } from '../../shared/components/ui/Modal';
-import { Input } from '../../shared/components/ui/Input';
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../shared/api/api-client";
+import { useAuthStore } from "../auth/auth.store";
+import { formatETB } from "../../shared/utils/cn";
+import { Button } from "../../shared/components/ui/Button";
+import { Badge, VerificationBadge } from "../../shared/components/ui/Badge";
+import { Avatar } from "../../shared/components/ui/Avatar";
+import { Modal } from "../../shared/components/ui/Modal";
+import { Input } from "../../shared/components/ui/Input";
 import {
   MapPin,
   ShieldCheck,
@@ -20,10 +20,8 @@ import {
   CheckCircle2,
   Clock,
   Edit3,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-import { EditListingModal } from './EditListingModal';
+} from "lucide-react";
+import { EditListingModal } from "./EditListingModal";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,21 +34,21 @@ export function ListingDetailPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [hasReportedLocally, setHasReportedLocally] = useState(false);
-  const [reportErrorMsg, setReportErrorMsg] = useState('');
-  const [reportSuccessMsg, setReportSuccessMsg] = useState('');
+  const [reportErrorMsg, setReportErrorMsg] = useState("");
+  const [reportSuccessMsg, setReportSuccessMsg] = useState("");
   const [dealSuccessMsg, setDealSuccessMsg] = useState<string | null>(null);
 
   // Deal Form State
-  const [dealAmount, setDealAmount] = useState<string>('');
+  const [dealAmount, setDealAmount] = useState<string>("");
   const [dealQuantity, setDealQuantity] = useState<number>(1);
-  const [dealNotes, setDealNotes] = useState<string>('');
+  const [dealNotes, setDealNotes] = useState<string>("");
 
   // Report Form State
-  const [reportCategory, setReportCategory] = useState<string>('spam');
-  const [reportDescription, setReportDescription] = useState<string>('');
+  const [reportCategory, setReportCategory] = useState<string>("spam");
+  const [reportDescription, setReportDescription] = useState<string>("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['listing', id],
+    queryKey: ["listing", id],
     queryFn: async () => {
       const res = await api.get(`/listings/${id}`);
       return res.data.data.listing;
@@ -60,16 +58,16 @@ export function ListingDetailPage() {
 
   // Fetch active transactions for current user to detect requested deal
   const { data: userDeals } = useQuery({
-    queryKey: ['transactions'],
+    queryKey: ["transactions"],
     queryFn: async () => {
-      const res = await api.get('/transactions');
+      const res = await api.get("/transactions");
       return res.data.data.transactions || [];
     },
     enabled: isAuthenticated,
   });
 
   const existingDeal = (userDeals || []).find(
-    (t: any) => t.listingId === id && t.status !== 'cancelled'
+    (t: any) => t.listingId === id && t.status !== "cancelled",
   );
 
   // Deal Mutation
@@ -81,21 +79,23 @@ export function ListingDetailPage() {
         quantity: dealQuantity,
         notes: dealNotes || undefined,
       };
-      const res = await api.post('/transactions', payload);
+      const res = await api.post("/transactions", payload);
       return res.data.data.transaction;
     },
     onSuccess: () => {
       setIsDealModalOpen(false);
-      setDealSuccessMsg('Deal request successfully submitted! The seller has been notified to accept.');
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['listing', id] });
+      setDealSuccessMsg(
+        "Deal request successfully submitted! The seller has been notified to accept.",
+      );
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["listing", id] });
     },
   });
 
   // Message Mutation
   const startChatMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post('/messages', {
+      const res = await api.post("/messages", {
         recipientId: data?.createdBy.userId,
         listingId: id,
         content: `Hi ${data?.createdBy.firstName}! I am interested in your listing: "${data?.title}". Is it still available?`,
@@ -103,7 +103,7 @@ export function ListingDetailPage() {
       return res.data.data.message;
     },
     onSuccess: () => {
-      navigate('/messages', {
+      navigate("/messages", {
         state: {
           partnerId: data?.createdBy.userId,
           listingId: id,
@@ -115,13 +115,13 @@ export function ListingDetailPage() {
   // Report Mutation
   const reportMutation = useMutation({
     mutationFn: async () => {
-      setReportErrorMsg('');
-      setReportSuccessMsg('');
+      setReportErrorMsg("");
+      setReportSuccessMsg("");
       if (reportDescription.trim().length < 20) {
-        throw new Error('Please describe the issue in at least 20 characters.');
+        throw new Error("Please describe the issue in at least 20 characters.");
       }
-      const res = await api.post('/reports', {
-        reportType: 'listing',
+      const res = await api.post("/reports", {
+        reportType: "listing",
         targetId: id,
         category: reportCategory,
         description: reportDescription.trim(),
@@ -130,7 +130,9 @@ export function ListingDetailPage() {
     },
     onSuccess: () => {
       setHasReportedLocally(true);
-      setReportSuccessMsg('Report submitted to campus moderation. Thank you for keeping UniMarket safe.');
+      setReportSuccessMsg(
+        "Report submitted to campus moderation. Thank you for keeping UniMarket safe.",
+      );
       setTimeout(() => {
         setIsReportModalOpen(false);
       }, 1500);
@@ -138,19 +140,19 @@ export function ListingDetailPage() {
     onError: (err: any) => {
       const errorData = err.response?.data?.error;
       if (
-        errorData?.code === 'ALREADY_EXISTS' ||
+        errorData?.code === "ALREADY_EXISTS" ||
         err.response?.status === 409 ||
-        errorData?.message?.toLowerCase().includes('already submitted')
+        errorData?.message?.toLowerCase().includes("already submitted")
       ) {
         setHasReportedLocally(true);
         setReportErrorMsg(
-          'You have already submitted a report for this post. You cannot report the same item more than once.'
+          "You have already submitted a report for this post. You cannot report the same item more than once.",
         );
       } else {
         setReportErrorMsg(
           errorData?.message ||
-          err.message ||
-          'Failed to submit report. Please describe the issue in at least 20 characters.'
+            err.message ||
+            "Failed to submit report. Please describe the issue in at least 20 characters.",
         );
       }
     },
@@ -160,7 +162,9 @@ export function ListingDetailPage() {
     return (
       <div className="max-w-4xl mx-auto py-12 text-center">
         <div className="animate-spin h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto" />
-        <p className="text-xs text-muted-foreground mt-3">Loading listing details...</p>
+        <p className="text-xs text-muted-foreground mt-3">
+          Loading listing details...
+        </p>
       </div>
     );
   }
@@ -170,15 +174,18 @@ export function ListingDetailPage() {
       <div className="max-w-md mx-auto py-12 text-center space-y-4">
         <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto" />
         <h2 className="text-lg font-bold">Listing Not Found</h2>
-        <p className="text-xs text-muted-foreground">This item may have been removed or completed by the owner.</p>
-        <Button onClick={() => navigate('/')}>Return to Marketplace</Button>
+        <p className="text-xs text-muted-foreground">
+          This item may have been removed or completed by the owner.
+        </p>
+        <Button onClick={() => navigate("/")}>Return to Marketplace</Button>
       </div>
     );
   }
 
-  const images: string[] = Array.isArray(data.images) && data.images.length > 0
-    ? data.images
-    : ['https://images.unsplash.com/photo-1544717305-2782549b5136?w=800'];
+  const images: string[] =
+    Array.isArray(data.images) && data.images.length > 0
+      ? data.images
+      : ["https://images.unsplash.com/photo-1544717305-2782549b5136?w=800"];
 
   const isOwner = user?.userId === data.createdBy.userId;
 
@@ -193,71 +200,15 @@ export function ListingDetailPage() {
         <span>Back to listings</span>
       </button>
 
-      {/* Owner Notice Banner for Hidden / Removed State */}
-      {isOwner && (data.status === 'hidden' || data.status === 'removed') && (
-        <div className="rounded-2xl border border-amber-300/80 bg-amber-50/90 dark:bg-amber-950/40 p-4 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="font-bold text-sm">
-                {data.status === 'hidden' ? 'Listing Hidden from Campus View' : 'Listing Removed'}
-              </p>
-              <p className="text-muted-foreground mt-0.5">
-                {data.status === 'hidden'
-                  ? 'This listing is only visible to you. Other students cannot find or purchase it right now.'
-                  : 'This listing has been removed from the university marketplace.'}
-              </p>
-            </div>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setIsEditModalOpen(true)} className="border-amber-400 text-amber-800 dark:text-amber-200 hover:bg-amber-100">
-            Edit / Publish
-          </Button>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        {/* Left Column: Photos Gallery / Carousel */}
+        {/* Left Column: Photos Gallery */}
         <div className="md:col-span-7 space-y-3">
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-muted shadow-sm group">
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-muted shadow-sm">
             <img
               src={images[activeImageIndex]}
               alt={data.title}
-              className="h-full w-full object-cover transition-all duration-300"
+              className="h-full w-full object-cover"
             />
-
-            {/* Carousel Navigation Buttons */}
-            {images.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 transition-all opacity-80 hover:opacity-100"
-                  aria-label="Previous photo"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/75 transition-all opacity-80 hover:opacity-100"
-                  aria-label="Next photo"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-
-                {/* Dot Indicators */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-xs">
-                  {images.map((_: string, idx: number) => (
-                    <span
-                      key={idx}
-                      className={`h-1.5 rounded-full transition-all ${
-                        activeImageIndex === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
           </div>
 
           {images.length > 1 && (
@@ -267,10 +218,16 @@ export function ListingDetailPage() {
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
                   className={`h-16 w-16 overflow-hidden rounded-xl border-2 transition-all ${
-                    activeImageIndex === idx ? 'border-emerald-600 scale-105' : 'border-border opacity-70'
+                    activeImageIndex === idx
+                      ? "border-emerald-600 scale-105"
+                      : "border-border opacity-70"
                   }`}
                 >
-                  <img src={img} alt="thumbnail" className="h-full w-full object-cover" />
+                  <img
+                    src={img}
+                    alt="thumbnail"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -283,9 +240,17 @@ export function ListingDetailPage() {
               <span>Campus Safety Guidelines</span>
             </div>
             <ul className="text-[11px] text-emerald-900/80 dark:text-emerald-200/80 space-y-1 list-disc list-inside">
-              <li>Always meet in open campus locations (Library, Student Lounge, Cafeteria).</li>
-              <li>Inspect items before transferring funds (Telebirr or Cash).</li>
-              <li>Confirm completion in the app once handover is finished to build campus rating.</li>
+              <li>
+                Always meet in open campus locations (Library, Student Lounge,
+                Cafeteria).
+              </li>
+              <li>
+                Inspect items before transferring funds (Telebirr or Cash).
+              </li>
+              <li>
+                Confirm completion in the app once handover is finished to build
+                campus rating.
+              </li>
             </ul>
           </div>
         </div>
@@ -299,7 +264,8 @@ export function ListingDetailPage() {
                 {data.transactionType}
               </span>
               <Badge variant="category">{data.category}</Badge>
-              {data.quantityAvailable <= 0 || data.availabilityStatus === 'unavailable' ? (
+              {data.quantityAvailable <= 0 ||
+              data.availabilityStatus === "unavailable" ? (
                 <span className="text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 px-2.5 py-0.5 rounded-md">
                   🔴 Sold Out / Unavailable
                 </span>
@@ -314,7 +280,11 @@ export function ListingDetailPage() {
               <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
                 {formatETB(data.price)}
               </span>
-              {data.transactionType === 'rent' && <span className="text-xs text-muted-foreground">/ semester or day</span>}
+              {data.transactionType === "rent" && (
+                <span className="text-xs text-muted-foreground">
+                  / semester or day
+                </span>
+              )}
             </div>
           </div>
 
@@ -323,18 +293,25 @@ export function ListingDetailPage() {
             {data.location?.address && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="text-foreground font-medium">{data.location.address}</span>
+                <span className="text-foreground font-medium">
+                  {data.location.address}
+                </span>
               </div>
             )}
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-              <span>Listed {new Date(data.createdAt).toLocaleDateString()}</span>
+              <span>
+                Listed {new Date(data.createdAt).toLocaleDateString()}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              {data.quantityAvailable <= 0 || data.availabilityStatus === 'unavailable' ? (
+              {data.quantityAvailable <= 0 ||
+              data.availabilityStatus === "unavailable" ? (
                 <>
                   <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0" />
-                  <span className="text-rose-600 dark:text-rose-400 font-bold">Sold Out / No longer available</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-bold">
+                    Sold Out / No longer available
+                  </span>
                 </>
               ) : (
                 <>
@@ -372,23 +349,13 @@ export function ListingDetailPage() {
                 </div>
               </div>
 
-              {data.createdBy.averageRating > 0 ? (
+              {data.createdBy.averageRating > 0 && (
                 <div className="text-right">
                   <div className="text-amber-500 font-extrabold text-sm">
                     ★ {data.createdBy.averageRating.toFixed(1)}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
                     {data.createdBy.totalRatings} ratings
-                  </div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                    {data.createdBy.totalTransactions || 0} deals completed
-                  </div>
-                </div>
-              ) : (
-                <div className="text-right">
-                  <div className="text-[11px] text-muted-foreground font-medium">New member</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {data.createdBy.totalTransactions || 0} deals completed
                   </div>
                 </div>
               )}
@@ -424,11 +391,11 @@ export function ListingDetailPage() {
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
                           <Clock className="h-3.5 w-3.5" />
                           <span>
-                            {existingDeal.status === 'pending'
-                              ? 'Deal Requested (Pending Acceptance)'
-                              : existingDeal.status === 'in_progress'
-                              ? 'Deal In Progress (Awaiting Handover)'
-                              : 'Deal Completed'}
+                            {existingDeal.status === "pending"
+                              ? "Deal Requested (Pending Acceptance)"
+                              : existingDeal.status === "in_progress"
+                                ? "Deal In Progress (Awaiting Handover)"
+                                : "Deal Completed"}
                           </span>
                         </span>
                         <span className="text-xs font-extrabold text-foreground">
@@ -436,24 +403,29 @@ export function ListingDetailPage() {
                         </span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
-                        {existingDeal.status === 'pending'
-                          ? 'You have requested this deal. Once the seller accepts, you can meet on campus to inspect and confirm.'
-                          : 'Deal is active. Meet on campus to finalize item exchange.'}
+                        {existingDeal.status === "pending"
+                          ? "You have requested this deal. Once the seller accepts, you can meet on campus to inspect and confirm."
+                          : "Deal is active. Meet on campus to finalize item exchange."}
                       </p>
                       <Link to="/deals" className="block pt-1">
-                        <Button size="md" className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                        <Button
+                          size="md"
+                          className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                        >
                           View & Track in Deals &rarr;
                         </Button>
                       </Link>
                     </div>
-                  ) : data.quantityAvailable <= 0 || data.availabilityStatus === 'unavailable' ? (
+                  ) : data.quantityAvailable <= 0 ||
+                    data.availabilityStatus === "unavailable" ? (
                     /* Sold out to third parties - Keep confidential! */
                     <div className="rounded-2xl border border-rose-200 bg-rose-50/80 dark:bg-rose-950/30 p-4 space-y-2 text-center">
                       <p className="text-sm font-bold text-rose-800 dark:text-rose-200">
                         Item Sold Out / Unavailable
                       </p>
                       <p className="text-xs text-rose-700/80 dark:text-rose-300/80">
-                        This item has already been sold or is no longer available. No deals can currently be initiated.
+                        This item has already been sold or is no longer
+                        available. No deals can currently be initiated.
                       </p>
                     </div>
                   ) : (
@@ -462,7 +434,7 @@ export function ListingDetailPage() {
                       size="lg"
                       className="w-full gap-2 text-base font-bold shadow-md shadow-emerald-600/20"
                       onClick={() => {
-                        setDealAmount(data.price ? String(data.price) : '');
+                        setDealAmount(data.price ? String(data.price) : "");
                         setIsDealModalOpen(true);
                       }}
                     >
@@ -499,7 +471,7 @@ export function ListingDetailPage() {
                 ) : (
                   <button
                     onClick={() => {
-                      setReportErrorMsg('');
+                      setReportErrorMsg("");
                       setIsReportModalOpen(true);
                     }}
                     className="text-[11px] text-muted-foreground hover:text-red-500 transition-colors inline-flex items-center gap-1"
@@ -515,14 +487,22 @@ export function ListingDetailPage() {
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                  Your Listing ({data.quantityAvailable <= 0 || data.availabilityStatus === 'unavailable' ? '🔴 Sold / Unavailable' : '🟢 Active'})
+                  Your Listing (
+                  {data.quantityAvailable <= 0 ||
+                  data.availabilityStatus === "unavailable"
+                    ? "🔴 Sold / Unavailable"
+                    : "🟢 Active"}
+                  )
                 </span>
-                <span className="text-xs text-muted-foreground">{data.viewCount || 0} views</span>
+                <span className="text-xs text-muted-foreground">
+                  {data.viewCount || 0} views
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                {data.quantityAvailable <= 0 || data.availabilityStatus === 'unavailable'
-                  ? 'This item is marked as sold out or unavailable. You can restock quantity or update pricing.'
-                  : 'This item is active on campus. You can update details, change pricing, or adjust stock.'}
+                {data.quantityAvailable <= 0 ||
+                data.availabilityStatus === "unavailable"
+                  ? "This item is marked as sold out or unavailable. You can restock quantity or update pricing."
+                  : "This item is active on campus. You can update details, change pricing, or adjust stock."}
               </p>
               <div className="flex gap-2 pt-1">
                 <Button
@@ -534,14 +514,22 @@ export function ListingDetailPage() {
                   <span>Edit Listing</span>
                 </Button>
                 <Link to="/my-listings" className="w-full">
-                  <Button size="md" variant="outline" className="w-full text-xs font-semibold">
+                  <Button
+                    size="md"
+                    variant="outline"
+                    className="w-full text-xs font-semibold"
+                  >
                     My Inventory
                   </Button>
                 </Link>
               </div>
               {existingDeal && (
                 <Link to="/deals" className="block pt-1">
-                  <Button size="sm" variant="ghost" className="w-full text-xs text-amber-700 dark:text-amber-300">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full text-xs text-amber-700 dark:text-amber-300"
+                  >
                     View Deal Request on This Item &rarr;
                   </Button>
                 </Link>
@@ -550,62 +538,6 @@ export function ListingDetailPage() {
           )}
         </div>
       </div>
-
-      {/* Mobile Sticky Action Bar (FE-11: Sticky Message + Start Deal; Report) */}
-      {!isOwner && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-md border-t border-border z-40 flex items-center gap-2 shadow-lg">
-          <Button
-            variant="outline"
-            size="md"
-            className="flex-1 gap-1.5 font-semibold text-xs"
-            onClick={() => {
-              if (!isAuthenticated) {
-                navigate('/login');
-              } else {
-                startChatMutation.mutate();
-              }
-            }}
-            isLoading={startChatMutation.isPending}
-          >
-            <MessageSquare className="h-4 w-4 text-emerald-600" />
-            <span>Message</span>
-          </Button>
-
-          {data.quantityAvailable > 0 && data.availabilityStatus !== 'unavailable' ? (
-            <Button
-              size="md"
-              className="flex-1 gap-1.5 font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  navigate('/login');
-                } else {
-                  setDealAmount(data.price ? String(data.price) : '');
-                  setIsDealModalOpen(true);
-                }
-              }}
-            >
-              <Handshake className="h-4 w-4" />
-              <span>Start Deal</span>
-            </Button>
-          ) : (
-            <Button size="md" variant="outline" disabled className="flex-1 text-xs opacity-60">
-              Unavailable
-            </Button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              setReportErrorMsg('');
-              setIsReportModalOpen(true);
-            }}
-            className="p-2.5 rounded-xl border border-border text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-            title="Report this listing"
-          >
-            <AlertTriangle className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       {/* Propose Deal Modal */}
       <Modal
@@ -664,8 +596,8 @@ export function ListingDetailPage() {
         isOpen={isReportModalOpen}
         onClose={() => {
           setIsReportModalOpen(false);
-          setReportErrorMsg('');
-          setReportSuccessMsg('');
+          setReportErrorMsg("");
+          setReportSuccessMsg("");
         }}
         title="Report Listing"
         description="Help us keep UniMarket safe. Reports are monitored by campus administration."
@@ -688,7 +620,10 @@ export function ListingDetailPage() {
           {hasReportedLocally && !reportSuccessMsg && (
             <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>You have already submitted a report for this post. You cannot report the same item more than once.</span>
+              <span>
+                You have already submitted a report for this post. You cannot
+                report the same item more than once.
+              </span>
             </div>
           )}
 
@@ -720,7 +655,7 @@ export function ListingDetailPage() {
               value={reportDescription}
               onChange={(e) => {
                 setReportDescription(e.target.value);
-                if (reportErrorMsg) setReportErrorMsg('');
+                if (reportErrorMsg) setReportErrorMsg("");
               }}
               disabled={hasReportedLocally}
               placeholder="Describe the issue for moderation (minimum 20 characters)..."
@@ -736,8 +671,8 @@ export function ListingDetailPage() {
               variant="ghost"
               onClick={() => {
                 setIsReportModalOpen(false);
-                setReportErrorMsg('');
-                setReportSuccessMsg('');
+                setReportErrorMsg("");
+                setReportSuccessMsg("");
               }}
             >
               Close
@@ -762,7 +697,7 @@ export function ListingDetailPage() {
         onClose={() => setIsEditModalOpen(false)}
         listing={data}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['listing', id] });
+          queryClient.invalidateQueries({ queryKey: ["listing", id] });
         }}
       />
     </div>
