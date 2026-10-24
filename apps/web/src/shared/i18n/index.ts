@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import enLanding from '../../../public/locales/en/landing.json';
-import amLanding from '../../../public/locales/am/landing.json';
+import React, { createContext, useContext, useState, useCallback } from "react";
+import enLanding from "../../../public/locales/en/landing.json";
+import amLanding from "../../../public/locales/am/landing.json";
 
 type LocaleDict = Record<string, any>;
 
@@ -21,14 +21,14 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-const STORAGE_KEY = 'unimarket_lang';
+const STORAGE_KEY = "unimarket_lang";
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<string>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'en';
+      return localStorage.getItem(STORAGE_KEY) || "en";
     } catch {
-      return 'en';
+      return "en";
     }
   });
 
@@ -42,19 +42,28 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const translate = useCallback(
-    (key: string, namespace = 'landing', options?: Record<string, any>): string => {
-      const dict = dictionaries[language]?.[namespace] || dictionaries.en[namespace] || {};
-      const parts = key.split('.');
+    (
+      key: string,
+      namespace = "landing",
+      options?: Record<string, any>,
+    ): string => {
+      const dict =
+        dictionaries[language]?.[namespace] || dictionaries.en[namespace] || {};
+      const parts = key.split(".");
       let current: any = dict;
 
       for (const part of parts) {
-        if (current && typeof current === 'object' && part in current) {
+        if (current && typeof current === "object" && part in current) {
           current = current[part];
         } else {
           // fallback to en
           let fallback: any = dictionaries.en[namespace];
           for (const fbPart of parts) {
-            if (fallback && typeof fallback === 'object' && fbPart in fallback) {
+            if (
+              fallback &&
+              typeof fallback === "object" &&
+              fbPart in fallback
+            ) {
               fallback = fallback[fbPart];
             } else {
               fallback = null;
@@ -66,21 +75,24 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      if (typeof current !== 'string') {
+      if (typeof current !== "string") {
         return key;
       }
 
       if (options) {
         let result = current;
         for (const [optKey, optVal] of Object.entries(options)) {
-          result = result.replace(new RegExp(`{{${optKey}}}`, 'g'), String(optVal));
+          result = result.replace(
+            new RegExp(`{{${optKey}}}`, "g"),
+            String(optVal),
+          );
         }
         return result;
       }
 
       return current;
     },
-    [language]
+    [language],
   );
 
   return React.createElement(
@@ -89,34 +101,41 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       value: {
         language,
         changeLanguage,
-        t: (key: string, options?: Record<string, any>) => translate(key, 'landing', options),
+        t: (key: string, options?: Record<string, any>) =>
+          translate(key, "landing", options),
       },
     },
-    children
+    children,
   );
 }
 
-export function useTranslation(namespace = 'landing') {
+export function useTranslation(namespace = "landing") {
   const context = useContext(I18nContext);
 
   if (!context) {
     // Graceful fallback outside provider
-    const translateStatic = (key: string, options?: Record<string, any>): string => {
+    const translateStatic = (
+      key: string,
+      options?: Record<string, any>,
+    ): string => {
       const dict = dictionaries.en[namespace] || {};
-      const parts = key.split('.');
+      const parts = key.split(".");
       let current: any = dict;
       for (const part of parts) {
-        if (current && typeof current === 'object' && part in current) {
+        if (current && typeof current === "object" && part in current) {
           current = current[part];
         } else {
           return key;
         }
       }
-      if (typeof current === 'string') {
+      if (typeof current === "string") {
         if (options) {
           let result = current;
           for (const [optKey, optVal] of Object.entries(options)) {
-            result = result.replace(new RegExp(`{{${optKey}}}`, 'g'), String(optVal));
+            result = result.replace(
+              new RegExp(`{{${optKey}}}`, "g"),
+              String(optVal),
+            );
           }
           return result;
         }
@@ -128,7 +147,7 @@ export function useTranslation(namespace = 'landing') {
     return {
       t: translateStatic,
       i18n: {
-        language: 'en',
+        language: "en",
         changeLanguage: () => {},
       },
     };
