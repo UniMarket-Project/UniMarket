@@ -32,7 +32,7 @@ services:
       - key: HMAC_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false # Set to your Vercel frontend URL: https://your-project.vercel.app
+        sync: false # Set to your frontend URL: https://unimarket-web.onrender.com
       - key: STORAGE_PROVIDER
         value: r2
       - key: R2_ACCOUNT_ID
@@ -47,3 +47,17 @@ services:
         sync: false
       - key: R2_ENDPOINT
         sync: false
+
+  - type: web
+    name: unimarket-web
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: apps/web/Dockerfile
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    dockerBuildArgs:
+      - key: VITE_API_BASE_URL
+        value: https://unimarket-api.onrender.com/api/v1
+      - key: VITE_FRONTEND_URL
+        value: https://unimarket-web.onrender.com
