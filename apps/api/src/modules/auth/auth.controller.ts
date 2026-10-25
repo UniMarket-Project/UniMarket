@@ -7,10 +7,11 @@ const REFRESH_COOKIE_NAME = "um_rt";
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function setRefreshCookie(res: Response, token: string): void {
+  const isCrossSite = config.app.isProd && !config.security.cookieDomain;
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: config.app.isProd,
-    sameSite: "lax",
+    sameSite: isCrossSite ? "none" : "lax",
     path: "/api/v1/auth",
     maxAge: COOKIE_MAX_AGE_MS,
     domain: config.security.cookieDomain || undefined,
@@ -18,10 +19,11 @@ function setRefreshCookie(res: Response, token: string): void {
 }
 
 function clearRefreshCookie(res: Response): void {
+  const isCrossSite = config.app.isProd && !config.security.cookieDomain;
   res.clearCookie(REFRESH_COOKIE_NAME, {
     httpOnly: true,
     secure: config.app.isProd,
-    sameSite: "lax",
+    sameSite: isCrossSite ? "none" : "lax",
     path: "/api/v1/auth",
     domain: config.security.cookieDomain || undefined,
   });

@@ -10,6 +10,7 @@ export const config = {
   },
   db: {
     url: env.DATABASE_URL,
+    directUrl: env.DIRECT_URL || env.DATABASE_URL,
   },
   jwt: {
     accessSecret: env.JWT_ACCESS_SECRET,
