@@ -4,6 +4,7 @@ import { api } from "../../shared/api/api-client";
 import { useAuthStore } from "../auth/auth.store";
 import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
+import { ImageUpload } from "../../shared/components/ui/ImageUpload";
 import { VerificationBadge } from "../../shared/components/ui/Badge";
 import { Lock, CheckCircle2, Briefcase, GraduationCap } from "lucide-react";
 import { getErrorMessage } from "../../shared/utils/errors";
@@ -244,11 +245,18 @@ export function VerificationPage() {
               </div>
             )}
 
-            <Input
-              label="ID Card / License Photo URL"
+            <ImageUpload
+              label={
+                isProvider
+                  ? "Business License / Trade Document Photo"
+                  : "Student ID Card Photo or Official Document"
+              }
               value={docUrl}
-              onChange={(e) => setDocUrl(e.target.value)}
-              placeholder="https://..."
+              onChange={setDocUrl}
+              purpose="verification_document"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              helperText="Upload your campus ID or license from device storage/gallery, or provide an image URL. Stored securely on cloud storage."
+              placeholder="https://example.com/student-id.jpg"
             />
 
             <Button

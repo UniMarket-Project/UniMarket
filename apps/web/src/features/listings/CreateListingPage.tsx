@@ -5,6 +5,7 @@ import { api } from '../../shared/api/api-client';
 import { useAuthStore } from '../auth/auth.store';
 import { Input } from '../../shared/components/ui/Input';
 import { Button } from '../../shared/components/ui/Button';
+import { ImageUpload } from '../../shared/components/ui/ImageUpload';
 import { ShieldAlert, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getErrorMessage } from '../../shared/utils/errors';
@@ -234,31 +235,38 @@ export function CreateListingPage() {
           />
 
           {/* Photo Picker */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Listing Cover Photo
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {SAMPLE_PHOTOS.map((url, i) => (
-                <button
-                  type="button"
-                  key={i}
-                  onClick={() => { setSelectedPhoto(url); setCustomPhotoUrl(''); }}
-                  className={`aspect-video rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedPhoto === url && !customPhotoUrl ? 'border-emerald-600 ring-2 ring-emerald-500/20' : 'border-border opacity-70'
-                  }`}
-                >
-                  <img src={url} alt="sample" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
+          <div className="space-y-4">
+            <ImageUpload
+              label="Listing Photo"
+              value={customPhotoUrl}
+              onChange={(url) => {
+                setCustomPhotoUrl(url);
+                if (url) setSelectedPhoto(url);
+              }}
+              purpose="listing_image"
+              accept="image/jpeg,image/png,image/webp"
+              helperText="Upload a photo from your storage/gallery or paste an image URL. Stored on cloud storage."
+              placeholder="https://example.com/item.jpg"
+            />
 
-            <div className="pt-2">
-              <Input
-                placeholder="Or paste an image URL (optional)"
-                value={customPhotoUrl}
-                onChange={(e) => setCustomPhotoUrl(e.target.value)}
-              />
+            <div className="space-y-1.5 pt-1">
+              <span className="block text-[11px] font-semibold text-muted-foreground">
+                Or select from campus sample photos:
+              </span>
+              <div className="grid grid-cols-4 gap-2">
+                {SAMPLE_PHOTOS.map((url, i) => (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => { setSelectedPhoto(url); setCustomPhotoUrl(url); }}
+                    className={`aspect-video rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedPhoto === url ? 'border-emerald-600 ring-2 ring-emerald-500/20' : 'border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={url} alt="sample" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
