@@ -3,10 +3,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "./auth.store";
 import { Input } from "../../shared/components/ui/Input";
 import { Button } from "../../shared/components/ui/Button";
-import { GraduationCap, Sparkles } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { getErrorMessage } from "../../shared/utils/errors";
 
-const DEMO_ACCOUNTS = [
+export const DEMO_ACCOUNTS = [
   {
     role: "Abebe (Verified Seller)",
     email: "abebe.bikila@aau.edu.et",
@@ -70,20 +70,6 @@ export function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async (accEmail: string, accPass: string) => {
-    setEmail(accEmail);
-    setPassword(accPass);
-    setErrorMsg("");
-    try {
-      await login(accEmail, accPass);
-      navigate("/");
-    } catch (err: any) {
-      setErrorMsg(
-        getErrorMessage(err, "Failed to login with demo account. Please try again.")
-      );
-    }
-  };
-
   return (
     <div className="max-w-md mx-auto py-8 space-y-6">
       <div className="text-center space-y-2">
@@ -98,26 +84,6 @@ export function LoginPage() {
         </p>
       </div>
 
-      {/* Quick Showcase Account Switcher */}
-      <div className="rounded-2xl border border-emerald-500/20 bg-card p-4 space-y-2.5 shadow-sm">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-          <Sparkles className="h-4 w-4 text-emerald-600" />
-          <span>Quick 1-Click Showcase Demo Accounts</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.email}
-              type="button"
-              onClick={() => handleQuickLogin(acc.email, acc.password)}
-              className={`p-2.5 rounded-xl border text-left text-xs transition-all hover:scale-[1.02] active:scale-100 flex flex-col justify-between ${acc.color}`}
-            >
-              <span className="font-bold truncate">{acc.role}</span>
-              <span className="text-[10px] opacity-80">{acc.tag}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Standard Email/Password Form */}
       <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5">
