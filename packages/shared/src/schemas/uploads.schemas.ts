@@ -10,7 +10,13 @@ export const uploadPurposeEnum = z.enum([
 export const presignUploadSchema = z
   .object({
     purpose: uploadPurposeEnum,
-    contentType: z.enum(["image/jpeg", "image/png", "application/pdf"]),
+    contentType: z.enum([
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+    ]),
     sizeBytes: z
       .number()
       .int()

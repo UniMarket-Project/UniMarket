@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, raw } from 'express';
 import { UploadsController } from './uploads.controller.js';
 import { authenticate } from '../../platform/middleware/authenticate.middleware.js';
 import { validate } from '../../platform/middleware/validate.middleware.js';
@@ -15,4 +15,8 @@ uploadsRouter.post(
 );
 
 // Local dev upload direct handler
-uploadsRouter.put('/local/:key(*)', asyncHandler(UploadsController.handleLocalUpload));
+uploadsRouter.put(
+  '/local/:key(*)',
+  raw({ type: '*/*', limit: '10mb' }),
+  asyncHandler(UploadsController.handleLocalUpload)
+);

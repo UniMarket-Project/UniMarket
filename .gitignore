@@ -41,8 +41,8 @@ logs/
 Thumbs.db
 
 # Storage / Uploads (local test)
-uploads/
-tmp/
+/uploads/
+/tmp/
 
 
 # Documentation

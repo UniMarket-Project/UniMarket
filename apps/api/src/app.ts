@@ -1,4 +1,5 @@
 import express, { Express } from 'express';
+import path from 'path';
 import cookieParser from 'cookie-parser';
 import { pinoHttp } from 'pino-http';
 import { logger } from './platform/logger/logger.js';
@@ -44,6 +45,9 @@ export function createApp(): Express {
 
   // Health and operational endpoints (outside rate limiter and /api/v1 prefix)
   app.use('/', healthRouter);
+
+  // Serve locally stored uploads
+  app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
   // Global rate limiter applied to API routes
   app.use('/api/v1', globalRateLimiter);
