@@ -10,8 +10,10 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
+
 export const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: API_BASE_URL,
   withCredentials: true, // Send HTTP-only refresh cookies
   headers: {
     "Content-Type": "application/json",
@@ -80,7 +82,7 @@ api.interceptors.response.use(
 
       try {
         const refreshResponse = await axios.post(
-          "/api/v1/auth/refresh",
+          `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true },
         );
