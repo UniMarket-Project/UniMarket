@@ -1,0 +1,6 @@
+
+
+-- Enable common extensions for UUID generation, hashing, and full-text search
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
