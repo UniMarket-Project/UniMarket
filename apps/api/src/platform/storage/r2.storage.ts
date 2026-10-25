@@ -27,7 +27,8 @@ export class R2StorageProvider implements IStorageProvider {
     const secretAccessKey = options?.secretAccessKey ?? r2Config.secretAccessKey;
     this.bucket = options?.bucketName ?? r2Config.bucketName;
     this.publicUrl = options?.publicUrl ?? r2Config.publicUrl;
-    const customEndpoint = options?.endpoint ?? r2Config.endpoint;
+    const customEndpoint =
+      options?.endpoint ?? (options?.accountId ? undefined : r2Config.endpoint);
 
     if (options?.client) {
       this.client = options.client;

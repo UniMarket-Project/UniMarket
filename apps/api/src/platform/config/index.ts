@@ -33,7 +33,11 @@ export const config = {
       publicUrl: env.R2_PUBLIC_URL,
       endpoint: env.R2_ENDPOINT,
     },
-    publicUrl: env.R2_PUBLIC_URL || `http://localhost:${env.PORT}/uploads`,
+    publicUrl:
+      env.R2_PUBLIC_URL ||
+      (process.env.API_URL
+        ? `${process.env.API_URL}/uploads`
+        : `http://localhost:${env.PORT}/uploads`),
   },
 } as const;
 

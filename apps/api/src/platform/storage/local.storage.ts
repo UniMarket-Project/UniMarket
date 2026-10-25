@@ -7,7 +7,8 @@ export class LocalStorageProvider implements IStorageProvider {
     _contentType: string,
     expiresInSeconds = 300
   ): Promise<PresignUploadResult> {
-    const uploadUrl = `http://localhost:${config.app.port}/api/v1/uploads/local/${key}`;
+    const baseUrl = process.env.API_URL || `http://localhost:${config.app.port}`;
+    const uploadUrl = `${baseUrl}/api/v1/uploads/local/${key}`;
     const fileUrl = `${config.storage.publicUrl}/${key}`;
 
     return {

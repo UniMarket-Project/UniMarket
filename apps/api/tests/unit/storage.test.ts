@@ -1,5 +1,10 @@
 // Ensure required environment variables exist for isolated unit tests
 process.env.NODE_ENV = 'test';
+process.env.STORAGE_PROVIDER = 'local';
+delete process.env.R2_ENDPOINT;
+delete process.env.R2_ACCOUNT_ID;
+delete process.env.R2_ACCESS_KEY_ID;
+delete process.env.R2_SECRET_ACCESS_KEY;
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://mock:mock@localhost:5432/mock_test';
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'test_jwt_access_secret_min_16_chars';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test_jwt_refresh_secret_min_16_chars';
@@ -128,6 +133,7 @@ describe('Storage Providers', () => {
 
   describe('Storage Factory', () => {
     it('returns LocalStorageProvider when STORAGE_PROVIDER is local', () => {
+      (config.storage as any).provider = 'local';
       const provider = getStorageProvider();
       assert.ok(provider instanceof LocalStorageProvider);
     });
