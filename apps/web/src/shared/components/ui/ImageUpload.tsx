@@ -3,6 +3,7 @@ import { api } from "../../api/api-client";
 import { Input } from "./Input";
 import { Upload, Link as LinkIcon, X, Loader2, CheckCircle2, FileText, Image as ImageIcon } from "lucide-react";
 import { getErrorMessage } from "../../utils/errors";
+import { formatImageUrl } from "../../utils/media";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -198,7 +199,7 @@ export function ImageUpload({
               <FileText className="h-8 w-8 text-rose-500" />
             ) : (
               <img
-                src={value}
+                src={formatImageUrl(value)}
                 alt="Upload preview"
                 className="h-full w-full object-cover"
                 onError={(e) => {

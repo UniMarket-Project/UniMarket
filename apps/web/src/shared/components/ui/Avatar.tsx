@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { cn } from '../../utils/cn';
+import { formatImageUrl } from '../../utils/media';
 
 interface AvatarProps {
   src?: string | null;
@@ -8,6 +10,9 @@ interface AvatarProps {
 }
 
 export function Avatar({ src, name = 'User', size = 'md', className }: AvatarProps) {
+  const [hasError, setHasError] = useState(false);
+  const resolvedSrc = formatImageUrl(src);
+
   const sizes = {
     sm: 'h-8 w-8 text-xs',
     md: 'h-10 w-10 text-sm',
@@ -22,11 +27,12 @@ export function Avatar({ src, name = 'User', size = 'md', className }: AvatarPro
     .map((n) => n[0].toUpperCase())
     .join('');
 
-  if (src) {
+  if (resolvedSrc && !hasError) {
     return (
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name}
+        onError={() => setHasError(true)}
         className={cn('rounded-full object-cover border border-border shadow-sm', sizes[size], className)}
       />
     );

@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../src/platform/database/prisma.client.js';
 
 // Security helpers for seed
 const ENCRYPTION_KEY = Buffer.from(
@@ -24,30 +22,66 @@ function hashIdNumber(idNumber: string): string {
   return crypto.createHmac('sha256', HMAC_SECRET).update(idNumber.trim().toUpperCase()).digest('hex');
 }
 
+const DEMO_EMAILS = [
+  'admin@aau.edu.et',
+  'abebe.bikila@aau.edu.et',
+  'tigist.alemu@aau.edu.et',
+  'yonas.haile@aau.edu.et',
+  'chaltu.kebede@aau.edu.et',
+  'tadesse.repair@gmail.com',
+  'dawit.alemu@aau.edu.et',
+  'hiwot.tsegaye@aau.edu.et',
+];
+
 async function main() {
   console.log('🌱 Starting UniMarket Database Seed...');
 
   // 1. Clean existing records in reverse dependency order for idempotency
-  await prisma.auditLog.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.report.deleteMany();
-  await prisma.ratingReview.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.transaction.deleteMany();
-  await prisma.request.deleteMany();
-  await prisma.listing.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.userVerification.deleteMany();
-  await prisma.userProfile.deleteMany();
-  await prisma.user.deleteMany();
+  // If RESET_ALL=true, wipes entire DB; otherwise preserves registered real users
+  const resetAll = process.env.RESET_ALL === 'true';
 
-  console.log('🧹 Cleaned existing database records (idempotent reset).');
+  if (resetAll) {
+    await prisma.profileChangeRequest.deleteMany();
+    await prisma.auditLog.deleteMany();
+    await prisma.notification.deleteMany();
+    await prisma.report.deleteMany();
+    await prisma.ratingReview.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.message.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.request.deleteMany();
+    await prisma.listing.deleteMany();
+    await prisma.refreshToken.deleteMany();
+    await prisma.userVerification.deleteMany();
+    await prisma.userProfile.deleteMany();
+    await prisma.user.deleteMany();
+    console.log('🧹 Cleaned all database records (complete reset).');
+  } else {
+    const demoUsers = await prisma.user.findMany({
+      where: { email: { in: DEMO_EMAILS } },
+      select: { id: true },
+    });
+    const demoUserIds = demoUsers.map((u) => u.id);
 
-  // Prevent hardcoded demo password in production environments without explicit override
-  if (process.env.NODE_ENV === 'production' && !process.env.DEMO_USER_PASSWORD) {
-    throw new Error('DEMO_USER_PASSWORD environment variable must be explicitly defined in production');
+    if (demoUserIds.length > 0) {
+      await prisma.profileChangeRequest.deleteMany({ where: { userId: { in: demoUserIds } } });
+      await prisma.auditLog.deleteMany({ where: { adminId: { in: demoUserIds } } });
+      await prisma.notification.deleteMany({ where: { userId: { in: demoUserIds } } });
+      await prisma.report.deleteMany({ where: { OR: [{ reporterId: { in: demoUserIds } }, { targetId: { in: demoUserIds } }] } });
+      await prisma.ratingReview.deleteMany({ where: { OR: [{ reviewerId: { in: demoUserIds } }, { revieweeId: { in: demoUserIds } }] } });
+      await prisma.payment.deleteMany({ where: { transaction: { OR: [{ buyerId: { in: demoUserIds } }, { sellerId: { in: demoUserIds } }] } } });
+      await prisma.message.deleteMany({ where: { OR: [{ senderId: { in: demoUserIds } }, { recipientId: { in: demoUserIds } }] } });
+      await prisma.transaction.deleteMany({ where: { OR: [{ buyerId: { in: demoUserIds } }, { sellerId: { in: demoUserIds } }] } });
+      await prisma.request.deleteMany({ where: { createdById: { in: demoUserIds } } });
+      await prisma.listing.deleteMany({ where: { createdById: { in: demoUserIds } } });
+      await prisma.refreshToken.deleteMany({ where: { userId: { in: demoUserIds } } });
+      await prisma.userVerification.deleteMany({ where: { userId: { in: demoUserIds } } });
+      await prisma.userProfile.deleteMany({ where: { userId: { in: demoUserIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: demoUserIds } } });
+      console.log('🧹 Cleaned existing demo user records while preserving registered users.');
+    }
   }
+
   const demoPassword = process.env.DEMO_USER_PASSWORD || 'Password123!';
   const defaultPasswordHash = await bcrypt.hash(demoPassword, 10);
 

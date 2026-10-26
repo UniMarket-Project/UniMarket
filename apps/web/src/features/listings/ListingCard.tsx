@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formatETB, cn } from '../../shared/utils/cn';
 import { Badge } from '../../shared/components/ui/Badge';
+import { formatImageUrl } from '../../shared/utils/media';
 import { ShieldCheck, MapPin } from 'lucide-react';
 
 export interface ListingItem {
@@ -30,7 +31,9 @@ export interface ListingItem {
 export function ListingCard({ listing }: { listing: ListingItem }) {
   const defaultImage =
     'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80';
-  const coverImage = listing.images && listing.images.length > 0 ? listing.images[0] : defaultImage;
+  const coverImage = formatImageUrl(
+    listing.images && listing.images.length > 0 ? listing.images[0] : defaultImage
+  );
 
   const typeLabels: Record<string, { label: string; color: string }> = {
     sell: { label: 'For Sale', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
