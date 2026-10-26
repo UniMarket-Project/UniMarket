@@ -56,6 +56,9 @@ services:
     plan: free
     region: frankfurt
     healthCheckPath: /healthz
+    envVars:
+      - key: BACKEND_URL
+        sync: false # Set to your Render API URL: https://unimarket-api-xxxx.onrender.com
     dockerBuildArgs:
       - key: VITE_API_BASE_URL
         value: https://unimarket-api.onrender.com/api/v1

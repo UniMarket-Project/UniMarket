@@ -32,9 +32,11 @@ FROM nginx:1.27-alpine AS runner
 LABEL org.opencontainers.image.title="UniMarket Web"
 LABEL org.opencontainers.image.description="UniMarket Production SPA Frontend"
 
-# Copy custom Nginx configuration
+# Copy custom Nginx configuration and entrypoint
 COPY apps/web/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY apps/web/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Copy compiled static assets from builder
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
@@ -48,4 +50,5 @@ EXPOSE 80
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/healthz || exit 1
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
