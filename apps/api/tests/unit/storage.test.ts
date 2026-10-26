@@ -37,6 +37,26 @@ describe('Storage Providers', () => {
         await provider.deleteFile('listings/item1.jpg');
       });
     });
+
+    it('saves file buffer directly and returns file URL', async () => {
+      const provider = new LocalStorageProvider();
+      const buffer = Buffer.from('test-image-content');
+      const fileUrl = await provider.uploadFile('test/direct-upload.jpg', buffer, 'image/jpeg');
+      assert.ok(fileUrl.includes('test/direct-upload.jpg'));
+    });
+
+    it('retrieves saved file stream with getFile and returns null for non-existent', async () => {
+      const provider = new LocalStorageProvider();
+      const buffer = Buffer.from('stream-test-content');
+      await provider.uploadFile('test/stream-test.jpg', buffer, 'image/jpeg');
+
+      const fileResult = await provider.getFile('test/stream-test.jpg');
+      assert.ok(fileResult);
+      assert.ok(fileResult.body);
+
+      const notFound = await provider.getFile('test/does-not-exist.jpg');
+      assert.equal(notFound, null);
+    });
   });
 
   describe('R2StorageProvider', () => {
@@ -128,6 +148,84 @@ describe('Storage Providers', () => {
       assert.ok(sentCommand);
       assert.equal(sentCommand.input.Key, 'folder/file.jpg');
       assert.equal(sentCommand.input.Bucket, 'media-bucket');
+    });
+
+    it('uploads file buffer directly with PutObjectCommand and returns file URL', async () => {
+      let sentCommand: any = null;
+      const client = new S3Client({
+        region: 'auto',
+        endpoint: 'https://myacc123.r2.cloudflarestorage.com',
+        credentials: {
+          accessKeyId: 'testaccesskey456',
+          secretAccessKey: 'testsecretkey78901234567890123456789012',
+        },
+      });
+      client.send = async (cmd: any) => {
+        sentCommand = cmd;
+        return {} as any;
+      };
+
+      const provider = new R2StorageProvider({
+        accountId: 'myacc123',
+        accessKeyId: 'testaccesskey456',
+        secretAccessKey: 'testsecretkey78901234567890123456789012',
+        bucketName: 'media-bucket',
+        publicUrl: 'https://media.unimarket.com',
+        client,
+      });
+
+      const buffer = Buffer.from('binary-image-data');
+      const fileUrl = await provider.uploadFile('avatar/user1/pic.jpg', buffer, 'image/jpeg');
+
+      assert.ok(sentCommand);
+      assert.equal(sentCommand.input.Bucket, 'media-bucket');
+      assert.equal(sentCommand.input.Key, 'avatar/user1/pic.jpg');
+      assert.equal(sentCommand.input.ContentType, 'image/jpeg');
+      assert.equal(fileUrl, 'https://media.unimarket.com/avatar/user1/pic.jpg');
+    });
+
+    it('retrieves file stream with getFile and handles 404 gracefully', async () => {
+      let sentCommand: any = null;
+      let shouldThrow404 = false;
+      const client = new S3Client({
+        region: 'auto',
+        endpoint: 'https://myacc123.r2.cloudflarestorage.com',
+        credentials: {
+          accessKeyId: 'testaccesskey456',
+          secretAccessKey: 'testsecretkey78901234567890123456789012',
+        },
+      });
+      client.send = async (cmd: any) => {
+        sentCommand = cmd;
+        if (shouldThrow404) {
+          const err: any = new Error('Not found');
+          err.name = 'NoSuchKey';
+          err.$metadata = { httpStatusCode: 404 };
+          throw err;
+        }
+        return {
+          Body: 'fake-stream',
+          ContentType: 'image/jpeg',
+          ContentLength: 100,
+        } as any;
+      };
+
+      const provider = new R2StorageProvider({
+        accountId: 'myacc123',
+        accessKeyId: 'testaccesskey456',
+        secretAccessKey: 'testsecretkey78901234567890123456789012',
+        bucketName: 'media-bucket',
+        client,
+      });
+
+      const result = await provider.getFile('avatar/user1/pic.jpg');
+      assert.ok(result);
+      assert.equal(result.contentType, 'image/jpeg');
+      assert.equal(sentCommand.input.Key, 'avatar/user1/pic.jpg');
+
+      shouldThrow404 = true;
+      const nullResult = await provider.getFile('missing.jpg');
+      assert.equal(nullResult, null);
     });
   });
 

@@ -34,11 +34,15 @@ export const config = {
       publicUrl: env.R2_PUBLIC_URL,
       endpoint: env.R2_ENDPOINT,
     },
+    baseUrl:
+      process.env.API_URL ||
+      process.env.RENDER_EXTERNAL_URL ||
+      `http://localhost:${env.PORT}`,
     publicUrl:
       env.R2_PUBLIC_URL ||
-      (process.env.API_URL
-        ? `${process.env.API_URL}/uploads`
-        : `http://localhost:${env.PORT}/uploads`),
+      (process.env.API_URL || process.env.RENDER_EXTERNAL_URL
+        ? `${(process.env.API_URL || process.env.RENDER_EXTERNAL_URL)!.replace(/\/+$/, '')}/api/v1/uploads/file`
+        : `http://localhost:${env.PORT}/api/v1/uploads/file`),
   },
 } as const;
 

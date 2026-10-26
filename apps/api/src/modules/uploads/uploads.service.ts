@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import path from 'path';
 import { storage } from '../../platform/storage/index.js';
 import type { PresignUploadInput } from '@unimarket/shared';
 
@@ -24,6 +23,25 @@ export class UploadsService {
       fileUrl: presigned.fileUrl,
       expiresIn: presigned.expiresIn,
       method: presigned.method,
+    };
+  }
+
+  public static async uploadDirect(
+    userId: string,
+    purpose: string,
+    buffer: Buffer,
+    contentType: string
+  ) {
+    const cleanContentType = (contentType || 'image/jpeg').split(';')[0].trim().toLowerCase();
+    const ext = EXTENSION_MAP[cleanContentType] || 'jpg';
+    const randomId = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    const key = `${purpose}/${userId}/${Date.now()}-${randomId}.${ext}`;
+
+    const fileUrl = await storage.uploadFile(key, buffer, cleanContentType);
+
+    return {
+      fileUrl,
+      key,
     };
   }
 }

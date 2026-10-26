@@ -58,10 +58,35 @@ export function ImageUpload({
     }
 
     setIsUploading(true);
-    setUploadProgress("Preparing upload...");
+    setUploadProgress("Uploading file to cloud storage...");
 
     try {
-      // 1. Request presigned upload URL from UniMarket API
+      // 1. Direct server-side upload to R2 (bypasses browser CORS preflight completely)
+      let uploadedUrl = "";
+      try {
+        const directRes = await api.post(`/uploads/direct?purpose=${purpose}`, file, {
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+        });
+
+        uploadedUrl = directRes.data?.data?.fileUrl;
+      } catch (directErr: any) {
+        // If direct upload endpoint is not 404 (e.g., auth error, validation error, server error), rethrow
+        if (directErr?.response?.status && directErr.response.status !== 404) {
+          throw directErr;
+        }
+        // Fallback to presigned upload if direct upload endpoint is unavailable
+        console.warn("Direct upload unavailable (404), falling back to presigned upload:", directErr);
+      }
+
+      if (uploadedUrl) {
+        onChange(uploadedUrl);
+        setUploadProgress("");
+        return;
+      }
+
+      // 2. Fallback: Request presigned upload URL from UniMarket API
       const presignRes = await api.post("/uploads/presign", {
         purpose,
         contentType: file.type,
@@ -69,9 +94,8 @@ export function ImageUpload({
       });
 
       const { uploadUrl, fileUrl } = presignRes.data.data;
-      setUploadProgress("Uploading file to cloud storage...");
 
-      // 2. Upload binary payload to S3/R2 presigned URL (or local storage handler)
+      // 3. Upload binary payload to S3/R2 presigned URL
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
@@ -84,7 +108,7 @@ export function ImageUpload({
         throw new Error(`Upload server responded with status ${uploadRes.status}`);
       }
 
-      // 3. Set the public reference URL
+      // 4. Set the public reference URL
       onChange(fileUrl);
       setUploadProgress("");
     } catch (err: any) {

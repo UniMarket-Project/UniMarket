@@ -1,6 +1,6 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { IStorageProvider, PresignUploadResult } from './storage.interface.js';
+import type { IStorageProvider, PresignUploadResult, StorageFileResult } from './storage.interface.js';
 import { config } from '../config/index.js';
 
 export interface R2StorageOptions {
@@ -88,6 +88,56 @@ export class R2StorageProvider implements IStorageProvider {
       expiresIn: expiresInSeconds,
       method: 'PUT',
     };
+  }
+
+  public async uploadFile(
+    key: string,
+    buffer: Buffer,
+    contentType: string
+  ): Promise<string> {
+    const cleanKey = key.replace(/^\/+/, '');
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: cleanKey,
+      Body: buffer,
+      ContentType: contentType,
+    });
+
+    await this.client.send(command);
+
+    const fileUrl = this.publicUrl
+      ? `${this.publicUrl.replace(/\/+$/, '')}/${cleanKey}`
+      : (this.publicUrl === '' && this.accountId
+          ? `https://${this.accountId}.r2.cloudflarestorage.com/${this.bucket}/${cleanKey}`
+          : (config.storage?.publicUrl
+              ? `${config.storage.publicUrl.replace(/\/+$/, '')}/${cleanKey}`
+              : (this.accountId
+                  ? `https://${this.accountId}.r2.cloudflarestorage.com/${this.bucket}/${cleanKey}`
+                  : `https://pub-${this.bucket}.r2.dev/${cleanKey}`)));
+
+    return fileUrl;
+  }
+
+  public async getFile(key: string): Promise<StorageFileResult | null> {
+    const cleanKey = key.replace(/^\/+/, '');
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: cleanKey,
+      });
+      const response = await this.client.send(command);
+      return {
+        body: response.Body as NodeJS.ReadableStream,
+        contentType: response.ContentType,
+        contentLength: response.ContentLength,
+      };
+    } catch (err: any) {
+      if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   public async deleteFile(key: string): Promise<void> {

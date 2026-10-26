@@ -14,9 +14,23 @@ uploadsRouter.post(
   asyncHandler(UploadsController.getPresignedUpload)
 );
 
+// Direct file upload to storage (R2 / Local) bypassing browser CORS restrictions
+uploadsRouter.post(
+  '/direct',
+  authenticate,
+  raw({ type: '*/*', limit: '10mb' }),
+  asyncHandler(UploadsController.handleDirectUpload)
+);
+
 // Local dev upload direct handler
 uploadsRouter.put(
   '/local/:key(*)',
   raw({ type: '*/*', limit: '10mb' }),
   asyncHandler(UploadsController.handleLocalUpload)
+);
+
+// Public file serving route (R2 streaming proxy / local fallback)
+uploadsRouter.get(
+  '/file/:key(*)',
+  asyncHandler(UploadsController.handleServeFile)
 );

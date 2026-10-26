@@ -42,6 +42,8 @@ Thumbs.db
 
 # Storage / Uploads (local test)
 /uploads/
+apps/api/uploads/
+uploads/
 /tmp/
 
 

@@ -33,6 +33,8 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         sync: false # Set to your frontend URL: https://unimarket-web-bm0y.onrender.com
+      - key: API_URL
+        value: https://unimarket-emao.onrender.com
       - key: STORAGE_PROVIDER
         value: r2
       - key: R2_ACCOUNT_ID

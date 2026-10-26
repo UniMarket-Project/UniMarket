@@ -1,4 +1,6 @@
-import type { IStorageProvider, PresignUploadResult } from './storage.interface.js';
+import fs from 'fs';
+import path from 'path';
+import type { IStorageProvider, PresignUploadResult, StorageFileResult } from './storage.interface.js';
 import { config } from '../config/index.js';
 
 export class LocalStorageProvider implements IStorageProvider {
@@ -17,6 +19,40 @@ export class LocalStorageProvider implements IStorageProvider {
       expiresIn: expiresInSeconds,
       method: 'PUT',
     };
+  }
+
+  public async uploadFile(
+    key: string,
+    buffer: Buffer,
+    _contentType: string
+  ): Promise<string> {
+    const safeKey = path.normalize(key).replace(/^(\.\.[\/\\])+/, '');
+    const uploadDir = path.resolve(process.cwd(), 'uploads');
+    const filePath = path.join(uploadDir, safeKey);
+
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.promises.writeFile(filePath, buffer);
+
+    const baseUrl = config.storage.publicUrl;
+    return `${baseUrl}/${safeKey}`;
+  }
+
+  public async getFile(key: string): Promise<StorageFileResult | null> {
+    const safeKey = path.normalize(key).replace(/^(\.\.[\/\\])+/, '');
+    const uploadDir = path.resolve(process.cwd(), 'uploads');
+    const filePath = path.join(uploadDir, safeKey);
+
+    try {
+      await fs.promises.access(filePath);
+      const stream = fs.createReadStream(filePath);
+      const stats = await fs.promises.stat(filePath);
+      return {
+        body: stream,
+        contentLength: stats.size,
+      };
+    } catch {
+      return null;
+    }
   }
 
   public async deleteFile(_key: string): Promise<void> {
