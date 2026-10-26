@@ -30,6 +30,7 @@ interface AuthState {
   register: (payload: any) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
+  updateUser: (partialUser: Partial<AuthUser>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -37,6 +38,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
   isInitialized: false,
+
+  updateUser: (partialUser) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, ...partialUser } : null,
+    }));
+  },
 
   setAuth: (user, token) => {
     setAccessToken(token);

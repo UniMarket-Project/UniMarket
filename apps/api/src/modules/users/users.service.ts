@@ -1,6 +1,6 @@
 import { prisma } from "../../platform/database/prisma.client.js";
-import { NotFoundError } from "../../platform/errors/http-errors.js";
-import type { UpdateProfileInput } from "@unimarket/shared";
+import { NotFoundError, ForbiddenError, ConflictError } from "../../platform/errors/http-errors.js";
+import type { UpdateProfileInput, SubmitProfileChangeRequestInput } from "@unimarket/shared";
 import type { Prisma } from "@prisma/client";
 import { UsersRepository } from "./users.repository.js";
 
@@ -44,10 +44,26 @@ export class UsersService {
   public static async updateMe(userId: string, input: UpdateProfileInput) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, isDeleted: true },
+      select: { id: true, isDeleted: true, verificationStatus: true },
     });
     if (!user || user.isDeleted) {
       throw new NotFoundError("User not found");
+    }
+
+    // If account is verified, user CANNOT modify personal details directly without admin approval.
+    // Avatar picture and availability status can be freely set/edited anytime.
+    if (user.verificationStatus === "verified") {
+      const hasRestrictedChanges =
+        input.firstName !== undefined ||
+        input.lastName !== undefined ||
+        input.bio !== undefined ||
+        input.location !== undefined;
+
+      if (hasRestrictedChanges) {
+        throw new ForbiddenError(
+          "Your account is verified. Verified members cannot change personal details (name, bio, location) directly without administrator approval. Please submit a Profile Change Request with reason and supporting evidence.",
+        );
+      }
     }
 
     // Update user first/last name if provided
@@ -75,6 +91,77 @@ export class UsersService {
     });
 
     return this.getMe(userId);
+  }
+
+  public static async submitProfileChangeRequest(
+    userId: string,
+    input: SubmitProfileChangeRequestInput,
+  ) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isDeleted: true, verificationStatus: true },
+    });
+    if (!user || user.isDeleted) {
+      throw new NotFoundError("User not found");
+    }
+
+    if (user.verificationStatus !== "verified") {
+      throw new ForbiddenError(
+        "Only verified accounts require an administrative profile change request. You can update your profile directly.",
+      );
+    }
+
+    const existingPending = await prisma.profileChangeRequest.findFirst({
+      where: { userId, status: "pending" },
+    });
+    if (existingPending) {
+      throw new ConflictError(
+        "You already have a profile change request pending administrator review.",
+      );
+    }
+
+    const requestedData = {
+      ...(input.firstName ? { firstName: input.firstName } : {}),
+      ...(input.lastName ? { lastName: input.lastName } : {}),
+      ...(input.bio !== undefined ? { bio: input.bio } : {}),
+      ...(input.address ? { address: input.address } : {}),
+    };
+
+    const request = await prisma.profileChangeRequest.create({
+      data: {
+        userId,
+        requestedData,
+        reason: input.reason,
+        evidenceUrl: input.evidenceUrl,
+        status: "pending",
+      },
+    });
+
+    return {
+      requestId: request.id,
+      status: request.status,
+      submittedAt: request.createdAt.toISOString(),
+    };
+  }
+
+  public static async getMyChangeRequests(userId: string) {
+    const requests = await prisma.profileChangeRequest.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      requests: requests.map((r) => ({
+        requestId: r.id,
+        requestedData: r.requestedData,
+        reason: r.reason,
+        evidenceUrl: r.evidenceUrl,
+        status: r.status,
+        rejectionReason: r.rejectionReason,
+        createdAt: r.createdAt.toISOString(),
+        reviewedAt: r.reviewedAt?.toISOString() ?? null,
+      })),
+    };
   }
 
   public static async getPublicProfile(userId: string) {

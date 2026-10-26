@@ -6,6 +6,7 @@ import { validate } from "../../platform/middleware/validate.middleware.js";
 import { asyncHandler } from "../../platform/http/async-handler.js";
 import {
   updateProfileSchema,
+  submitProfileChangeRequestSchema,
   userListingsQuerySchema,
 } from "@unimarket/shared";
 
@@ -18,6 +19,17 @@ usersRouter.patch(
   authenticate,
   validate({ body: updateProfileSchema }),
   asyncHandler(UsersController.updateMe),
+);
+usersRouter.post(
+  "/me/change-request",
+  authenticate,
+  validate({ body: submitProfileChangeRequestSchema }),
+  asyncHandler(UsersController.submitChangeRequest),
+);
+usersRouter.get(
+  "/me/change-request",
+  authenticate,
+  asyncHandler(UsersController.getMyChangeRequests),
 );
 
 // Public routes

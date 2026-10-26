@@ -13,6 +13,7 @@ import type {
   SuspendUserInput,
   UnsuspendUserInput,
   AdminUsersQueryInput,
+  ReviewProfileChangeRequestInput,
 } from "@unimarket/shared";
 import type { Prisma } from "@prisma/client";
 
@@ -24,6 +25,7 @@ export class AdminService {
       totalUsers,
       activeListings,
       completedDeals,
+      pendingProfileChanges,
     ] = await Promise.all([
       prisma.userVerification.count({ where: { status: "pending" } }),
       prisma.report.count({
@@ -32,6 +34,7 @@ export class AdminService {
       prisma.user.count({ where: { isDeleted: false } }),
       prisma.listing.count({ where: { status: "active", isDeleted: false } }),
       prisma.transaction.count({ where: { status: "completed" } }),
+      prisma.profileChangeRequest.count({ where: { status: "pending" } }),
     ]);
 
     return {
@@ -40,7 +43,156 @@ export class AdminService {
       totalUsers,
       activeListings,
       completedDeals,
+      pendingProfileChanges,
     };
+  }
+
+  public static async getProfileChangeRequests(status?: string) {
+    const where: Prisma.ProfileChangeRequestWhereInput = {};
+    if (status && status !== "all") {
+      where.status = status;
+    }
+
+    const requests = await prisma.profileChangeRequest.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            firstName: true,
+            lastName: true,
+            userType: true,
+            verificationStatus: true,
+            universityCode: true,
+            profile: {
+              select: {
+                avatarUrl: true,
+                bio: true,
+                address: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      requests: requests.map((r) => ({
+        requestId: r.id,
+        user: {
+          userId: r.user.id,
+          email: r.user.email,
+          phone: r.user.phone,
+          firstName: r.user.firstName,
+          lastName: r.user.lastName,
+          userType: r.user.userType,
+          verificationStatus: r.user.verificationStatus,
+          universityCode: r.user.universityCode,
+          avatarUrl: r.user.profile?.avatarUrl ?? null,
+          currentBio: r.user.profile?.bio ?? null,
+          currentAddress: r.user.profile?.address ?? null,
+        },
+        requestedData: r.requestedData,
+        reason: r.reason,
+        evidenceUrl: r.evidenceUrl,
+        status: r.status,
+        rejectionReason: r.rejectionReason,
+        createdAt: r.createdAt.toISOString(),
+        reviewedAt: r.reviewedAt?.toISOString() ?? null,
+      })),
+    };
+  }
+
+  public static async reviewProfileChangeRequest(
+    adminId: string,
+    requestId: string,
+    input: ReviewProfileChangeRequestInput,
+  ) {
+    const request = await prisma.profileChangeRequest.findUnique({
+      where: { id: requestId },
+      include: { user: true },
+    });
+
+    if (!request) {
+      throw new NotFoundError("Profile change request not found");
+    }
+
+    const isApproved = input.status === "approved";
+    const requested = request.requestedData as Record<string, any>;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (isApproved) {
+        // Apply user table changes
+        const userUpdates: Record<string, any> = {};
+        if (requested.firstName) userUpdates.firstName = requested.firstName;
+        if (requested.lastName) userUpdates.lastName = requested.lastName;
+        if (requested.phone) userUpdates.phone = requested.phone;
+        if (requested.universityCode) userUpdates.universityCode = requested.universityCode;
+
+        if (Object.keys(userUpdates).length > 0) {
+          await tx.user.update({
+            where: { id: request.userId },
+            data: userUpdates,
+          });
+        }
+
+        // Apply profile table changes
+        const profileUpdates: Record<string, any> = {};
+        if (requested.bio !== undefined) profileUpdates.bio = requested.bio;
+        if (requested.address !== undefined) profileUpdates.address = requested.address;
+
+        if (Object.keys(profileUpdates).length > 0) {
+          await tx.userProfile.upsert({
+            where: { userId: request.userId },
+            update: profileUpdates,
+            create: {
+              userId: request.userId,
+              ...profileUpdates,
+            },
+          });
+        }
+      }
+
+      // Update change request status
+      const updatedReq = await tx.profileChangeRequest.update({
+        where: { id: requestId },
+        data: {
+          status: isApproved ? "approved" : "rejected",
+          rejectionReason: input.rejectionReason ?? null,
+          reviewedByAdminId: adminId,
+          reviewedAt: new Date(),
+        },
+      });
+
+      // Send notification to user
+      await tx.notification.create({
+        data: {
+          userId: request.userId,
+          type: "verification_result",
+          title: isApproved
+            ? "Profile Change Request Approved"
+            : "Profile Change Request Rejected",
+          message: isApproved
+            ? "Your requested profile updates have been approved by administrator and applied to your account."
+            : `Your profile change request was rejected. Reason: ${input.rejectionReason || "Details could not be verified"}.`,
+        },
+      });
+
+      return updatedReq;
+    });
+
+    await AuditService.log(
+      adminId,
+      isApproved ? "PROFILE_CHANGE_APPROVED" : "PROFILE_CHANGE_REJECTED",
+      "USER_PROFILE_CHANGE",
+      requestId,
+      { status: input.status, reason: input.rejectionReason },
+    );
+
+    return { request: updated };
   }
 
   public static async getVerifications(query: AdminVerificationsQueryInput) {

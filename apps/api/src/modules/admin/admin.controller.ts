@@ -8,6 +8,28 @@ export class AdminController {
     sendSuccess(req, res, result);
   }
 
+  public static async getProfileChangeRequests(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const result = await AdminService.getProfileChangeRequests(
+      req.query.status as string | undefined,
+    );
+    sendSuccess(req, res, result);
+  }
+
+  public static async reviewProfileChangeRequest(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const result = await AdminService.reviewProfileChangeRequest(
+      req.user!.userId,
+      req.params.id,
+      req.body,
+    );
+    sendSuccess(req, res, result);
+  }
+
   public static async getVerifications(
     req: Request,
     res: Response,

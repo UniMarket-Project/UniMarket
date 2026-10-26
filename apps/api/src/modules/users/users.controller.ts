@@ -13,6 +13,25 @@ export class UsersController {
     sendSuccess(req, res, result);
   }
 
+  public static async submitChangeRequest(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const result = await UsersService.submitProfileChangeRequest(
+      req.user!.userId,
+      req.body,
+    );
+    sendSuccess(req, res, result, 201);
+  }
+
+  public static async getMyChangeRequests(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const result = await UsersService.getMyChangeRequests(req.user!.userId);
+    sendSuccess(req, res, result);
+  }
+
   public static async getPublicProfile(
     req: Request,
     res: Response,

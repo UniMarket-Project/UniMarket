@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/api-client';
 import { Button } from '../../shared/components/ui/Button';
+import { Avatar } from '../../shared/components/ui/Avatar';
 import {
   ShieldCheck,
   CheckCircle,
   ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { getErrorMessage } from '../../shared/utils/errors';
 
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'verifications' | 'reports'>('verifications');
+  const [activeTab, setActiveTab] = useState<'verifications' | 'reports' | 'profile-changes'>('verifications');
    // 1. Fetch Stats
   const { data: statsData } = useQuery({
     queryKey: ['admin-stats'],
@@ -35,6 +37,30 @@ export function AdminDashboardPage() {
     queryFn: async () => {
       const res = await api.get('/admin/reports?status=submitted');
       return res.data.data.reports;
+    },
+  });
+
+  // 4. Fetch Profile Change Requests
+  const { data: profileChangesData, isLoading: profileChangesLoading } = useQuery({
+    queryKey: ['admin-profile-changes'],
+    queryFn: async () => {
+      const res = await api.get('/admin/profile-change-requests?status=pending');
+      return res.data.data.requests;
+    },
+  });
+
+  // Profile Change Review Mutation
+  const reviewProfileChangeMutation = useMutation({
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: 'approved' | 'rejected'; rejectionReason?: string }) => {
+      await api.patch(`/admin/profile-change-requests/${id}`, { status, rejectionReason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-profile-changes'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      alert('Profile change request updated successfully!');
+    },
+    onError: (err: any) => {
+      alert(getErrorMessage(err, 'Failed to update profile change request.'));
     },
   });
    // Verification Review Mutation
@@ -74,10 +100,12 @@ export function AdminDashboardPage() {
     totalUsers: 0,
     activeListings: 0,
     completedDeals: 0,
+    pendingProfileChanges: 0,
   };
 
   const verifications = verificationsData || [];
   const reports = reportsData || [];
+  const profileChanges = profileChangesData || [];
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -93,11 +121,18 @@ export function AdminDashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60">
           <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">Pending IDs</p>
           <p className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 mt-1">
             {stats.pendingVerifications}
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200/60">
+          <p className="text-[11px] font-semibold text-purple-800 dark:text-purple-300">Profile Edits</p>
+          <p className="text-2xl font-extrabold text-purple-900 dark:text-purple-200 mt-1">
+            {stats.pendingProfileChanges || profileChanges.length}
           </p>
         </div>
 
@@ -137,6 +172,17 @@ export function AdminDashboardPage() {
           }`}
         >
           Pending Verifications ({verifications.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profile-changes')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'profile-changes'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-card border border-border text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          Profile Requests ({profileChanges.length})
         </button>
 
         <button
@@ -235,7 +281,8 @@ export function AdminDashboardPage() {
           )}
         </div>
       )}
- {/* Tab 2: Reports Queue */}
+
+      {/* Tab 2: Reports Queue */}
       {activeTab === 'reports' && (
         <div className="space-y-4">
           {reportsLoading ? (
@@ -417,6 +464,181 @@ export function AdminDashboardPage() {
                         }
                       >
                         Suspend User (14 Days)
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3: Profile Change Requests Queue */}
+      {activeTab === 'profile-changes' && (
+        <div className="space-y-4">
+          {profileChangesLoading ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">Loading change requests...</div>
+          ) : profileChanges.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-border rounded-3xl bg-card">
+              <CheckCircle className="h-10 w-10 text-emerald-600 mx-auto mb-2" />
+              <p className="text-sm font-bold">No Pending Profile Change Requests</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                All requests to modify verified profiles have been reviewed.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {profileChanges.map((req: any) => {
+                const requested = req.requestedData || {};
+                return (
+                  <div
+                    key={req.requestId}
+                    className="p-5 rounded-3xl border border-border bg-card space-y-4 shadow-sm"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          src={req.user.avatarUrl}
+                          name={`${req.user.firstName} ${req.user.lastName}`}
+                          size="md"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-extrabold text-foreground">
+                              {req.user.firstName} {req.user.lastName}
+                            </p>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                              Verified Member
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {req.user.email} • {req.user.phone || 'No phone'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right text-[11px] text-muted-foreground">
+                        <p className="font-semibold text-foreground">
+                          Submitted: {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+                        <p>ID: {req.requestId.slice(0, 8)}...</p>
+                      </div>
+                    </div>
+
+                    {/* Comparison of Changes */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* Current Info */}
+                      <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Current Verified Profile
+                        </p>
+                        <div className="space-y-1">
+                          <p><strong className="text-foreground">Name:</strong> {req.user.firstName} {req.user.lastName}</p>
+                          <p><strong className="text-foreground">Campus Code:</strong> {req.user.universityCode || 'AAU'}</p>
+                          {req.user.currentAddress && (
+                            <p><strong className="text-foreground">Address:</strong> {req.user.currentAddress}</p>
+                          )}
+                          {req.user.currentBio && (
+                            <p><strong className="text-foreground">Bio:</strong> {req.user.currentBio}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Requested Changes */}
+                      <div className="p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/60 space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300">
+                          Requested Changes
+                        </p>
+                        <div className="space-y-1 text-purple-950 dark:text-purple-200">
+                          {(requested.firstName || requested.lastName) && (
+                            <p>
+                              <strong>New Name:</strong>{' '}
+                              <span className="font-bold underline">
+                                {requested.firstName || req.user.firstName}{' '}
+                                {requested.lastName || req.user.lastName}
+                              </span>
+                            </p>
+                          )}
+                          {requested.address && (
+                            <p><strong>New Address:</strong> {requested.address}</p>
+                          )}
+                          {requested.bio !== undefined && (
+                            <p><strong>New Bio:</strong> {requested.bio}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reason & Evidence Document */}
+                    <div className="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 space-y-2 text-xs">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                          User's Stated Reason:
+                        </p>
+                        <p className="text-foreground mt-0.5 whitespace-pre-line leading-relaxed">
+                          "{req.reason}"
+                        </p>
+                      </div>
+
+                      {req.evidenceUrl && (
+                        <div className="pt-2 border-t border-amber-200/40 flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-amber-950 dark:text-amber-200">
+                            Supporting Evidence Document:
+                          </span>
+                          <a
+                            href={req.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-card border border-border text-xs font-bold text-foreground hover:bg-muted"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-purple-600" />
+                            <span>View / Inspect Document</span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={reviewProfileChangeMutation.isPending}
+                        onClick={() => {
+                          const reason = prompt('Enter rejection reason for this profile change request:');
+                          if (reason !== null) {
+                            reviewProfileChangeMutation.mutate({
+                              id: req.requestId,
+                              status: 'rejected',
+                              rejectionReason: reason || 'Evidence insufficient or details not verifiable.',
+                            });
+                          }
+                        }}
+                      >
+                        Reject Request
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        disabled={reviewProfileChangeMutation.isPending}
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Approve profile changes for ${req.user.firstName} ${req.user.lastName}? This will immediately update their account.`
+                            )
+                          ) {
+                            reviewProfileChangeMutation.mutate({
+                              id: req.requestId,
+                              status: 'approved',
+                            });
+                          }
+                        }}
+                      >
+                        Approve & Update Profile
                       </Button>
                     </div>
                   </div>

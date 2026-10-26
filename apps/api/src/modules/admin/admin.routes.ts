@@ -13,6 +13,7 @@ import {
   suspendUserSchema,
   unsuspendUserSchema,
   adminUsersQuerySchema,
+  reviewProfileChangeRequestSchema,
 } from "@unimarket/shared";
 
 export const adminRouter = Router();
@@ -20,6 +21,17 @@ export const adminRouter = Router();
 adminRouter.use(authenticate, requireRole(Role.ADMIN));
 
 adminRouter.get("/stats", asyncHandler(AdminController.getStats));
+
+// Profile Change Requests
+adminRouter.get(
+  "/profile-change-requests",
+  asyncHandler(AdminController.getProfileChangeRequests),
+);
+adminRouter.patch(
+  "/profile-change-requests/:id",
+  validate({ body: reviewProfileChangeRequestSchema }),
+  asyncHandler(AdminController.reviewProfileChangeRequest),
+);
 
 // Verifications
 adminRouter.get(
