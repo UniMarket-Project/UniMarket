@@ -1,7 +1,15 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { sanitizeDatabaseUrl } from '../database/db-url-sanitizer.js';
 
 dotenv.config();
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = sanitizeDatabaseUrl(process.env.DATABASE_URL) || process.env.DATABASE_URL;
+}
+if (process.env.DIRECT_URL) {
+  process.env.DIRECT_URL = sanitizeDatabaseUrl(process.env.DIRECT_URL) || process.env.DIRECT_URL;
+}
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),

@@ -32,7 +32,7 @@ services:
       - key: HMAC_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false # Set to your frontend URL: https://unimarket-web.onrender.com
+        sync: false # Set to your frontend URL: https://unimarket-web-bm0y.onrender.com
       - key: STORAGE_PROVIDER
         value: r2
       - key: R2_ACCOUNT_ID
@@ -58,9 +58,9 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: BACKEND_URL
-        sync: false # Set to your Render API URL: https://unimarket-api-xxxx.onrender.com
+        sync: false # Set to your Render API URL: https://unimarket-emao.onrender.com
     dockerBuildArgs:
       - key: VITE_API_BASE_URL
-        value: https://unimarket-api.onrender.com/api/v1
+        value: /api/v1
       - key: VITE_FRONTEND_URL
-        value: https://unimarket-web.onrender.com
+        value: https://unimarket-web-bm0y.onrender.com
